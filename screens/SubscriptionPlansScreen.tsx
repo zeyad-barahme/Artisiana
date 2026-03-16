@@ -17,7 +17,9 @@ export default function SubscriptionPlansScreen({ navigation }: Props) {
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <BackButton onPress={() => navigation.goBack()} />
+          <View style={styles.backButton}>
+            <BackButton onPress={() => navigation.goBack()} />
+          </View>
           <Text style={styles.title}>Subscription Plans</Text>
         </View>
 
@@ -29,7 +31,7 @@ export default function SubscriptionPlansScreen({ navigation }: Props) {
             <Text style={styles.price}>{plan.price}</Text>
             <Text style={styles.bodyText}>Browse handmade products</Text>
             <Text style={styles.bodyText}>Save favorite items</Text>
-            <Pressable style={styles.button} onPress={() => navigation.navigate('Payment')}>
+            <Pressable style={styles.button} onPress={() => navigation.navigate('ComparePlans')}>
               <Text style={styles.buttonText}>Select</Text>
             </Pressable>
           </View>
@@ -50,12 +52,16 @@ const styles = StyleSheet.create({
   },
   header: {
     marginTop: 6,
-    height: 40,
+    height: 44,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  title: {
+  backButton: {
     position: 'absolute',
+    left: 0,
+    top: 0,
+  },
+  title: {
     textAlign: 'center',
     fontSize: 22,
     color: '#4A3A33',

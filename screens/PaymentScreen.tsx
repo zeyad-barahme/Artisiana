@@ -1,4 +1,4 @@
-﻿import React from 'react';
+﻿import React, { useState } from 'react';
 import { SafeAreaView, StyleSheet, Text, View, TextInput, Pressable } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
@@ -7,11 +7,27 @@ import BackButton from '../components/BackButton';
 type Props = NativeStackScreenProps<RootStackParamList, 'Payment'>;
 
 export default function PaymentScreen({ navigation }: Props) {
+  const [cardNumber, setCardNumber] = useState('');
+  const [expiry, setExpiry] = useState('');
+  const [cvc, setCvc] = useState('');
+  const [error, setError] = useState('');
+
+  const handlePay = () => {
+    if (!cardNumber.trim() || !expiry.trim() || !cvc.trim()) {
+      setError('All fields are required');
+      return;
+    }
+    setError('');
+    navigation.navigate('Success');
+  };
+
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
         <View style={styles.header}>
-          <BackButton onPress={() => navigation.goBack()} />
+          <View style={styles.backButton}>
+            <BackButton onPress={() => navigation.goBack()} />
+          </View>
           <Text style={styles.title}>Payment</Text>
         </View>
 
@@ -22,6 +38,8 @@ export default function PaymentScreen({ navigation }: Props) {
           style={styles.input}
           placeholder="card number"
           placeholderTextColor="#9B8F86"
+          value={cardNumber}
+          onChangeText={setCardNumber}
         />
 
         <View style={styles.rowLabels}>
@@ -34,15 +52,21 @@ export default function PaymentScreen({ navigation }: Props) {
             style={[styles.input, styles.inputSmall]}
             placeholder="MM / YY"
             placeholderTextColor="#9B8F86"
+            value={expiry}
+            onChangeText={setExpiry}
           />
           <TextInput
             style={[styles.input, styles.inputSmall]}
             placeholder="CVC"
             placeholderTextColor="#9B8F86"
+            value={cvc}
+            onChangeText={setCvc}
           />
         </View>
 
-        <Pressable style={styles.button} onPress={() => navigation.navigate('Success')}>
+        {error ? <Text style={styles.error}>{error}</Text> : null}
+
+        <Pressable style={styles.button} onPress={handlePay}>
           <Text style={styles.buttonText}>Pay</Text>
         </Pressable>
       </View>
@@ -61,12 +85,16 @@ const styles = StyleSheet.create({
   },
   header: {
     marginTop: 6,
-    height: 40,
+    height: 44,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  title: {
+  backButton: {
     position: 'absolute',
+    left: 0,
+    top: 0,
+  },
+  title: {
     textAlign: 'center',
     fontSize: 22,
     color: '#4A3A33',
@@ -102,9 +130,15 @@ const styles = StyleSheet.create({
   inputSmall: {
     width: '48%',
   },
+  error: {
+    marginTop: 14,
+    color: '#E1463A',
+    textAlign: 'center',
+    fontSize: 14,
+  },
   button: {
     alignSelf: 'center',
-    marginTop: 70,
+    marginTop: 24,
     backgroundColor: '#FF8A5B',
     paddingVertical: 12,
     paddingHorizontal: 44,

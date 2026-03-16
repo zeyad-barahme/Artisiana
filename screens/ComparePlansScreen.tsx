@@ -11,7 +11,9 @@ export default function ComparePlansScreen({ navigation }: Props) {
     <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
         <View style={styles.header}>
-          <BackButton onPress={() => navigation.goBack()} />
+          <View style={styles.backButton}>
+            <BackButton onPress={() => navigation.goBack()} />
+          </View>
           <Text style={styles.title}>Compare Plans</Text>
         </View>
 
@@ -73,12 +75,16 @@ const styles = StyleSheet.create({
   },
   header: {
     marginTop: 6,
-    height: 40,
+    height: 44,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  title: {
+  backButton: {
     position: 'absolute',
+    left: 0,
+    top: 0,
+  },
+  title: {
     textAlign: 'center',
     fontSize: 22,
     color: '#4A3A33',
