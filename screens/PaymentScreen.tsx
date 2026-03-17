@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { SafeAreaView, StyleSheet, Text, View, TextInput, Pressable } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
@@ -6,18 +6,55 @@ import BackButton from '../components/BackButton';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Payment'>;
 
+type Errors = {
+  cardNumber: string;
+  expiry: string;
+  cvc: string;
+};
+
 export default function PaymentScreen({ navigation }: Props) {
   const [cardNumber, setCardNumber] = useState('');
   const [expiry, setExpiry] = useState('');
   const [cvc, setCvc] = useState('');
-  const [error, setError] = useState('');
+  const [errors, setErrors] = useState<Errors>({
+    cardNumber: '',
+    expiry: '',
+    cvc: '',
+  });
+
+  const validateFields = () => {
+    const nextErrors: Errors = {
+      cardNumber: '',
+      expiry: '',
+      cvc: '',
+    };
+
+    if (!/^\d{16}$/.test(cardNumber)) {
+      nextErrors.cardNumber = 'Card Number must be exactly 16 digits';
+    }
+
+    if (!/^\d{2}\/\d{2}$/.test(expiry)) {
+      nextErrors.expiry = 'Expiry Date must be in MM/YY format';
+    } else {
+      const month = Number(expiry.slice(0, 2));
+      if (month < 1 || month > 12) {
+        nextErrors.expiry = 'Month must be between 01 and 12';
+      }
+    }
+
+    if (!/^\d{3}$/.test(cvc)) {
+      nextErrors.cvc = 'CVC must be exactly 3 digits';
+    }
+
+    setErrors(nextErrors);
+    return !nextErrors.cardNumber && !nextErrors.expiry && !nextErrors.cvc;
+  };
 
   const handlePay = () => {
-    if (!cardNumber.trim() || !expiry.trim() || !cvc.trim()) {
-      setError('All fields are required');
+    if (!validateFields()) {
       return;
     }
-    setError('');
+
     navigation.navigate('Success');
   };
 
@@ -40,7 +77,9 @@ export default function PaymentScreen({ navigation }: Props) {
           placeholderTextColor="#9B8F86"
           value={cardNumber}
           onChangeText={setCardNumber}
+          keyboardType="number-pad"
         />
+        {errors.cardNumber ? <Text style={styles.fieldError}>{errors.cardNumber}</Text> : null}
 
         <View style={styles.rowLabels}>
           <Text style={styles.label}>MM / YY</Text>
@@ -48,23 +87,29 @@ export default function PaymentScreen({ navigation }: Props) {
         </View>
 
         <View style={styles.rowInputs}>
-          <TextInput
-            style={[styles.input, styles.inputSmall]}
-            placeholder="MM / YY"
-            placeholderTextColor="#9B8F86"
-            value={expiry}
-            onChangeText={setExpiry}
-          />
-          <TextInput
-            style={[styles.input, styles.inputSmall]}
-            placeholder="CVC"
-            placeholderTextColor="#9B8F86"
-            value={cvc}
-            onChangeText={setCvc}
-          />
-        </View>
+          <View style={styles.inputGroup}>
+            <TextInput
+              style={[styles.input, styles.inputSmall]}
+              placeholder="MM / YY"
+              placeholderTextColor="#9B8F86"
+              value={expiry}
+              onChangeText={setExpiry}
+            />
+            {errors.expiry ? <Text style={styles.fieldError}>{errors.expiry}</Text> : null}
+          </View>
 
-        {error ? <Text style={styles.error}>{error}</Text> : null}
+          <View style={styles.inputGroup}>
+            <TextInput
+              style={[styles.input, styles.inputSmall]}
+              placeholder="CVC"
+              placeholderTextColor="#9B8F86"
+              value={cvc}
+              onChangeText={setCvc}
+              keyboardType="number-pad"
+            />
+            {errors.cvc ? <Text style={styles.fieldError}>{errors.cvc}</Text> : null}
+          </View>
+        </View>
 
         <Pressable style={styles.button} onPress={handlePay}>
           <Text style={styles.buttonText}>Pay</Text>
@@ -127,14 +172,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: 10,
   },
-  inputSmall: {
+  inputGroup: {
     width: '48%',
   },
-  error: {
-    marginTop: 14,
+  inputSmall: {
+    width: '100%',
+  },
+  fieldError: {
+    marginTop: 6,
     color: '#E1463A',
-    textAlign: 'center',
-    fontSize: 14,
+    fontSize: 12,
   },
   button: {
     alignSelf: 'center',
