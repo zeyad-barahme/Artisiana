@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { SafeAreaView, StyleSheet, Text, View, TextInput, Pressable } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { addDoc, collection } from 'firebase/firestore';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import BackButton from '../components/BackButton';
+import { db } from '../api/firebase';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Payment'>;
 
@@ -17,6 +19,7 @@ export default function PaymentScreen({ navigation, route }: Props) {
   const [cardNumber, setCardNumber] = useState('');
   const [expiry, setExpiry] = useState('');
   const [cvc, setCvc] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
   const [errors, setErrors] = useState<Errors>({
     cardNumber: '',
     expiry: '',
@@ -28,6 +31,21 @@ export default function PaymentScreen({ navigation, route }: Props) {
     const formattedCardNumber = digitsOnly.replace(/(\d{4})(?=\d)/g, '$1 ');
 
     setCardNumber(formattedCardNumber);
+  };
+
+  const handleExpiryChange = (value: string) => {
+    const digitsOnly = value.replace(/\D/g, '').slice(0, 4);
+
+    if (digitsOnly.length <= 2) {
+      setExpiry(digitsOnly);
+      return;
+    }
+
+    setExpiry(`${digitsOnly.slice(0, 2)}/${digitsOnly.slice(2)}`);
+  };
+
+  const handleCvcChange = (value: string) => {
+    setCvc(value.replace(/\D/g, '').slice(0, 3));
   };
 
   const validateFields = () => {
@@ -60,12 +78,31 @@ export default function PaymentScreen({ navigation, route }: Props) {
     return !nextErrors.cardNumber && !nextErrors.expiry && !nextErrors.cvc;
   };
 
-  const handlePay = () => {
+  const handlePay = async () => {
+    if (isSaving) {
+      return;
+    }
+
     if (!validateFields()) {
       return;
     }
 
+    setIsSaving(true);
     navigation.navigate('Success');
+
+    try {
+      console.log('Saving subscription...');
+
+      await addDoc(collection(db, 'subscriptions'), {
+        plan: selectedPlan,
+        price: selectedPrice,
+        createdAt: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error('Failed to save subscription:', error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -108,7 +145,9 @@ export default function PaymentScreen({ navigation, route }: Props) {
               placeholder="MM / YY"
               placeholderTextColor="#9B8F86"
               value={expiry}
-              onChangeText={setExpiry}
+              onChangeText={handleExpiryChange}
+              keyboardType="number-pad"
+              maxLength={5}
             />
             {errors.expiry ? <Text style={styles.fieldError}>{errors.expiry}</Text> : null}
           </View>
@@ -119,14 +158,15 @@ export default function PaymentScreen({ navigation, route }: Props) {
               placeholder="CVC"
               placeholderTextColor="#9B8F86"
               value={cvc}
-              onChangeText={setCvc}
+              onChangeText={handleCvcChange}
               keyboardType="number-pad"
+              maxLength={3}
             />
             {errors.cvc ? <Text style={styles.fieldError}>{errors.cvc}</Text> : null}
           </View>
         </View>
 
-        <Pressable style={styles.button} onPress={handlePay}>
+        <Pressable style={styles.button} onPress={handlePay} disabled={isSaving}>
           <Text style={styles.buttonText}>Pay</Text>
         </Pressable>
       </View>
