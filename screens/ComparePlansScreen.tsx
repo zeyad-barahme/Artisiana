@@ -6,7 +6,9 @@ import BackButton from '../components/BackButton';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ComparePlans'>;
 
-export default function ComparePlansScreen({ navigation }: Props) {
+export default function ComparePlansScreen({ navigation, route }: Props) {
+  const { selectedPlan, selectedPrice } = route.params;
+
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
@@ -18,6 +20,10 @@ export default function ComparePlansScreen({ navigation }: Props) {
         </View>
 
         <View style={styles.spacer} />
+
+        <Text style={styles.selectedPlanText}>
+          You are Selected: {selectedPlan} ({selectedPrice}/month)
+        </Text>
 
         <View style={styles.table}>
           <View style={styles.row}>
@@ -56,7 +62,15 @@ export default function ComparePlansScreen({ navigation }: Props) {
           </View>
         </View>
 
-        <Pressable style={styles.button} onPress={() => navigation.navigate('Payment')}>
+        <Pressable
+          style={styles.button}
+          onPress={() =>
+            navigation.navigate('Payment', {
+              selectedPlan,
+              selectedPrice,
+            })
+          }
+        >
           <Text style={styles.buttonText}>Continue</Text>
         </Pressable>
       </View>
@@ -92,6 +106,12 @@ const styles = StyleSheet.create({
   },
   spacer: {
     height: 50,
+  },
+  selectedPlanText: {
+    marginBottom: 18,
+    color: '#4A3A33',
+    fontSize: 16,
+    textAlign: 'center',
   },
   table: {
     marginTop: 6,

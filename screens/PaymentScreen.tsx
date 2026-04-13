@@ -12,7 +12,8 @@ type Errors = {
   cvc: string;
 };
 
-export default function PaymentScreen({ navigation }: Props) {
+export default function PaymentScreen({ navigation, route }: Props) {
+  const { selectedPlan, selectedPrice } = route.params;
   const [cardNumber, setCardNumber] = useState('');
   const [expiry, setExpiry] = useState('');
   const [cvc, setCvc] = useState('');
@@ -22,6 +23,13 @@ export default function PaymentScreen({ navigation }: Props) {
     cvc: '',
   });
 
+  const handleCardNumberChange = (value: string) => {
+    const digitsOnly = value.replace(/\D/g, '').slice(0, 16);
+    const formattedCardNumber = digitsOnly.replace(/(\d{4})(?=\d)/g, '$1 ');
+
+    setCardNumber(formattedCardNumber);
+  };
+
   const validateFields = () => {
     const nextErrors: Errors = {
       cardNumber: '',
@@ -29,7 +37,9 @@ export default function PaymentScreen({ navigation }: Props) {
       cvc: '',
     };
 
-    if (!/^\d{16}$/.test(cardNumber)) {
+    const cardDigits = cardNumber.replace(/\s/g, '');
+
+    if (!/^\d{16}$/.test(cardDigits)) {
       nextErrors.cardNumber = 'Card Number must be exactly 16 digits';
     }
 
@@ -70,14 +80,19 @@ export default function PaymentScreen({ navigation }: Props) {
 
         <View style={styles.spacer} />
 
+        <Text style={styles.selectedText}>
+          You are Selected: {selectedPlan} ({selectedPrice.trim()}/month)
+        </Text>
+
         <Text style={styles.label}>Card Number</Text>
         <TextInput
           style={styles.input}
           placeholder="card number"
           placeholderTextColor="#9B8F86"
           value={cardNumber}
-          onChangeText={setCardNumber}
+          onChangeText={handleCardNumberChange}
           keyboardType="number-pad"
+          maxLength={19}
         />
         {errors.cardNumber ? <Text style={styles.fieldError}>{errors.cardNumber}</Text> : null}
 
@@ -147,6 +162,11 @@ const styles = StyleSheet.create({
   },
   spacer: {
     height: 60,
+  },
+  selectedText: {
+    color: '#4A3A33',
+    fontSize: 16,
+    marginBottom: 10,
   },
   label: {
     color: '#4A3A33',

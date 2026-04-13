@@ -7,8 +7,14 @@ import SuccessScreen from '../screens/SuccessScreen';
 
 export type RootStackParamList = {
   SubscriptionPlans: undefined;
-  ComparePlans: undefined;
-  Payment: undefined;
+  ComparePlans: {
+    selectedPlan: string;
+    selectedPrice: string;
+  };
+  Payment: {
+    selectedPlan: string;
+    selectedPrice: string;
+  };
   Success: undefined;
 };
 

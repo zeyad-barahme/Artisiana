@@ -12,7 +12,14 @@ export default function SuccessScreen({ navigation }: Props) {
       <View style={styles.container}>
         <View style={styles.header}>
           <View style={styles.backButton}>
-            <BackButton onPress={() => navigation.goBack()} />
+            <BackButton
+              onPress={() =>
+                navigation.reset({
+                  index: 0,
+                  routes: [{ name: 'SubscriptionPlans' }],
+                })
+              }
+            />
           </View>
           <Text style={styles.title}>Success</Text>
         </View>
@@ -27,7 +34,12 @@ export default function SuccessScreen({ navigation }: Props) {
 
         <Pressable
           style={styles.button}
-          onPress={() => navigation.navigate('SubscriptionPlans')}
+          onPress={() =>
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'SubscriptionPlans' }],
+            })
+          }
         >
           <Text style={styles.buttonText}>Done</Text>
         </Pressable>

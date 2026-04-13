@@ -1,21 +1,31 @@
-﻿import React from 'react';
-import { SafeAreaView, StyleSheet, Text, View, ScrollView, Pressable } from 'react-native';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../navigation/AppNavigator';
-import BackButton from '../components/BackButton';
+﻿import React from "react";
+import {
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  View,
+  ScrollView,
+  Pressable,
+} from "react-native";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { RootStackParamList } from "../navigation/AppNavigator";
+import BackButton from "../components/BackButton";
 
 const plans = [
-  { title: 'Basic', price: '$5 / month' },
-  { title: 'Premium', price: '$10 / month' },
-  { title: 'VIP', price: '$20 / month' },
+  { title: "Basic", price: "$5" },
+  { title: "Premium", price: "$10" },
+  { title: "VIP", price: "$20" },
 ];
 
-type Props = NativeStackScreenProps<RootStackParamList, 'SubscriptionPlans'>;
+type Props = NativeStackScreenProps<RootStackParamList, "SubscriptionPlans">;
 
 export default function SubscriptionPlansScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.header}>
           <View style={styles.backButton}>
             <BackButton onPress={() => navigation.goBack()} />
@@ -28,10 +38,18 @@ export default function SubscriptionPlansScreen({ navigation }: Props) {
         {plans.map((plan) => (
           <View key={plan.title} style={styles.card}>
             <Text style={styles.cardTitle}>{plan.title}</Text>
-            <Text style={styles.price}>{plan.price}</Text>
+            <Text style={styles.price}>{plan.price} / month</Text>
             <Text style={styles.bodyText}>Browse handmade products</Text>
             <Text style={styles.bodyText}>Save favorite items</Text>
-            <Pressable style={styles.button} onPress={() => navigation.navigate('ComparePlans')}>
+            <Pressable
+              style={styles.button}
+              onPress={() =>
+                navigation.navigate("ComparePlans", {
+                  selectedPlan: plan.title,
+                  selectedPrice: plan.price,
+                })
+              }
+            >
               <Text style={styles.buttonText}>Select</Text>
             </Pressable>
           </View>
@@ -44,7 +62,7 @@ export default function SubscriptionPlansScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: '#F6F3EF',
+    backgroundColor: "#F6F3EF",
   },
   container: {
     paddingHorizontal: 26,
@@ -53,64 +71,64 @@ const styles = StyleSheet.create({
   header: {
     marginTop: 6,
     height: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   backButton: {
-    position: 'absolute',
+    position: "absolute",
     left: 0,
     top: 0,
   },
   title: {
-    textAlign: 'center',
+    textAlign: "center",
     fontSize: 22,
-    color: '#4A3A33',
-    fontWeight: '600',
+    color: "#4A3A33",
+    fontWeight: "600",
   },
   spacer: {
     height: 32,
   },
   card: {
-    alignSelf: 'center',
-    width: '78%',
+    alignSelf: "center",
+    width: "78%",
     borderWidth: 1,
-    borderColor: '#E4DCD4',
+    borderColor: "#E4DCD4",
     borderRadius: 22,
     paddingHorizontal: 18,
     paddingVertical: 16,
     marginBottom: 26,
-    backgroundColor: '#F8F6F4',
+    backgroundColor: "#F8F6F4",
   },
   cardTitle: {
     fontSize: 24,
-    color: '#4A3A33',
-    fontWeight: '600',
+    color: "#4A3A33",
+    fontWeight: "600",
     marginBottom: 2,
   },
   price: {
     fontSize: 20,
-    color: '#FF8A5B',
-    fontWeight: '600',
+    color: "#FF8A5B",
+    fontWeight: "600",
     marginBottom: 8,
   },
   bodyText: {
     fontSize: 14,
-    color: '#4A3A33',
+    color: "#4A3A33",
     marginBottom: 6,
   },
   button: {
-    alignSelf: 'center',
+    alignSelf: "center",
     marginTop: 12,
-    backgroundColor: '#FF8A5B',
+    backgroundColor: "#FF8A5B",
     paddingVertical: 10,
     paddingHorizontal: 30,
     borderRadius: 18,
     minWidth: 120,
   },
   buttonText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center',
+    fontWeight: "600",
+    textAlign: "center",
   },
 });
