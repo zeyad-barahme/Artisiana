@@ -3,10 +3,14 @@ import React from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 type CartItemProps = {
-  image: any;
+  image: string; // 🔥 رابط من Firebase
   title: string;
   price: number;
   quantity: number;
+
+  onIncrease: () => void;
+  onDecrease: () => void;
+  onDelete: () => void;
 };
 
 export default function CartItem({
@@ -14,10 +18,13 @@ export default function CartItem({
   title,
   price,
   quantity,
+  onIncrease,
+  onDecrease,
+  onDelete,
 }: CartItemProps) {
   return (
     <View style={styles.container}>
-      <Image source={image} style={styles.image} />
+      <Image source={{ uri: image }} style={styles.image} />
 
       <View style={styles.info}>
         <Text style={styles.title}>{title}</Text>
@@ -25,22 +32,19 @@ export default function CartItem({
         <Text style={styles.price}>${price}</Text>
 
         <View style={styles.quantityContainer}>
-          <TouchableOpacity onPress={() => console.log("minus")}>
+          <TouchableOpacity onPress={onDecrease}>
             <Feather name="minus" size={20} color="#FF7F50" />
           </TouchableOpacity>
 
           <Text style={styles.quantity}>{quantity}</Text>
 
-          <TouchableOpacity onPress={() => console.log("plus")}>
+          <TouchableOpacity onPress={onIncrease}>
             <Feather name="plus" size={20} color="#FF7F50" />
           </TouchableOpacity>
         </View>
       </View>
 
-      <TouchableOpacity
-        style={styles.deleteBtn}
-        onPress={() => console.log("delete")}
-      >
+      <TouchableOpacity style={styles.deleteBtn} onPress={onDelete}>
         <Feather name="trash-2" size={18} color="#000000" />
       </TouchableOpacity>
     </View>

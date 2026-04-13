@@ -1,5 +1,6 @@
 import Feather from "@expo/vector-icons/Feather";
-import React from "react";
+import { useRouter } from "expo-router";
+import React, { useState } from "react";
 import {
   Image,
   StyleSheet,
@@ -9,18 +10,30 @@ import {
   View,
 } from "react-native";
 
-export default function CartHeader() {
+type Props = {
+  onSearch: (text: string) => void;
+};
+
+export default function CartHeader({ onSearch }: Props) {
+  const router = useRouter();
+
+  const [search, setSearch] = useState("");
+
   return (
     <View style={styles.wrapper}>
       <View style={styles.container}>
+        {/* LOGO */}
         <Image
           source={require("@/assets/images/Logo.png")}
           style={styles.logo}
         />
 
+        {/* TITLE */}
         <Text style={styles.title}>Artisiana</Text>
 
+        {/* RIGHT SECTION */}
         <View style={styles.rightSection}>
+          {/* SEARCH */}
           <View style={styles.searchBox}>
             <Feather name="search" size={14} color="#FF7F50" />
 
@@ -28,10 +41,16 @@ export default function CartHeader() {
               placeholder="Search"
               placeholderTextColor="#FF7F50"
               style={styles.input}
+              value={search}
+              onChangeText={(text) => {
+                setSearch(text);
+                onSearch(text); // 🔥 يرسل القيمة للـ CartScreen
+              }}
             />
           </View>
 
-          <TouchableOpacity onPress={() => console.log("go to cart")}>
+          {/* CART ICON */}
+          <TouchableOpacity onPress={() => router.push("/cart")}>
             <Feather name="shopping-cart" size={24} color="#FF7F50" />
           </TouchableOpacity>
         </View>
@@ -53,6 +72,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
+
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
@@ -81,7 +101,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     width: 150,
-    height: 24,
+    height: 28,
     backgroundColor: "#FFFFFF",
     borderRadius: 8,
     borderWidth: 1,

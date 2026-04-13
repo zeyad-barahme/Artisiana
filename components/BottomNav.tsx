@@ -1,17 +1,19 @@
 import Feather from "@expo/vector-icons/Feather";
+import { useRouter } from "expo-router";
 import React from "react";
 import { Image, StyleSheet, TouchableOpacity, View } from "react-native";
 
 export default function BottomNav() {
+  const router = useRouter();
   return (
     <View style={styles.container}>
       {/* HOME */}
-      <TouchableOpacity>
+      <TouchableOpacity onPress={() => router.push("/")}>
         <Feather name="home" size={24} color="#FF7F50" />
       </TouchableOpacity>
 
       {/* GRID */}
-      <TouchableOpacity>
+      <TouchableOpacity onPress={() => router.push("/explore")}>
         <Feather name="grid" size={24} color="#FF7F50" />
       </TouchableOpacity>
 
@@ -24,12 +26,12 @@ export default function BottomNav() {
       </View>
 
       {/* BELL */}
-      <TouchableOpacity>
+      <TouchableOpacity onPress={() => router.push("/")}>
         <Feather name="bell" size={24} color="#FF7F50" />
       </TouchableOpacity>
 
       {/* USER */}
-      <TouchableOpacity>
+      <TouchableOpacity onPress={() => router.push("/")}>
         <Feather name="user" size={24} color="#FF7F50" />
       </TouchableOpacity>
     </View>
