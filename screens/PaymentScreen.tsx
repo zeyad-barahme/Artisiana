@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { SafeAreaView, StyleSheet, Text, View, TextInput, Pressable } from 'react-native';
+import { Alert, SafeAreaView, StyleSheet, Text, View, TextInput, Pressable } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { addDoc, collection } from 'firebase/firestore';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import BackButton from '../components/BackButton';
 import { db } from '../api/firebase';
@@ -88,18 +88,21 @@ export default function PaymentScreen({ navigation, route }: Props) {
     }
 
     setIsSaving(true);
-    navigation.navigate('Success');
 
     try {
       console.log('Saving subscription...');
 
-      await addDoc(collection(db, 'subscriptions'), {
+      const docRef = await addDoc(collection(db, 'subscriptions'), {
         plan: selectedPlan,
         price: selectedPrice,
-        createdAt: new Date().toISOString(),
+        createdAt: serverTimestamp(),
       });
+
+      console.log('Subscription saved with ID:', docRef.id);
+      navigation.navigate('Success');
     } catch (error) {
       console.error('Failed to save subscription:', error);
+      Alert.alert('Payment failed', 'We could not save your subscription. Please try again.');
     } finally {
       setIsSaving(false);
     }
