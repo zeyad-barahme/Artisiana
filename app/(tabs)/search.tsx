@@ -1,13 +1,14 @@
-import ProductCard from '@/components/common/ProductCard';
 import React, { useMemo, useState } from 'react';
 import {
-    FlatList,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
+  FlatList,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from 'react-native';
+import ProductCard from '../../components/common/ProductCard';
+import BottomNavBar from '../../components/layout/BottomNavBar';
 import { trendingProducts } from '../../components/data/homeData';
 
 const BG = '#FFF7F3';
@@ -54,13 +55,15 @@ export default function SearchScreen() {
               />
             </View>
           )}
-          contentContainerStyle={{ paddingBottom: 30 }}
+          contentContainerStyle={{ paddingBottom: 140 }}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             <Text style={styles.emptyText}>No products found</Text>
           }
         />
       </View>
+
+      <BottomNavBar />
     </SafeAreaView>
   );
 }
