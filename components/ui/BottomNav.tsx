@@ -7,17 +7,14 @@ export default function BottomNav() {
   const router = useRouter();
   return (
     <View style={styles.container}>
-      {/* HOME */}
-      <TouchableOpacity onPress={() => router.push("/")}>
+      <TouchableOpacity onPress={() => router.push("/checkout")}>
         <Feather name="home" size={24} color="#FF7F50" />
       </TouchableOpacity>
 
-      {/* GRID */}
-      <TouchableOpacity onPress={() => router.push("/explore")}>
+      <TouchableOpacity onPress={() => router.push("/checkout")}>
         <Feather name="grid" size={24} color="#FF7F50" />
       </TouchableOpacity>
 
-      {/* LOGO (منتصف) */}
       <View style={styles.centerLogo}>
         <Image
           source={require("@/assets/images/Logo.png")}
@@ -25,13 +22,11 @@ export default function BottomNav() {
         />
       </View>
 
-      {/* BELL */}
-      <TouchableOpacity onPress={() => router.push("/")}>
+      <TouchableOpacity onPress={() => router.push("/checkout")}>
         <Feather name="bell" size={24} color="#FF7F50" />
       </TouchableOpacity>
 
-      {/* USER */}
-      <TouchableOpacity onPress={() => router.push("/")}>
+      <TouchableOpacity onPress={() => router.push("/checkout")}>
         <Feather name="user" size={24} color="#FF7F50" />
       </TouchableOpacity>
     </View>

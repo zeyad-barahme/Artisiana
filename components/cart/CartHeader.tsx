@@ -44,7 +44,7 @@ export default function CartHeader({ onSearch }: Props) {
               value={search}
               onChangeText={(text) => {
                 setSearch(text);
-                onSearch(text); // 🔥 يرسل القيمة للـ CartScreen
+                onSearch(text);
               }}
             />
           </View>

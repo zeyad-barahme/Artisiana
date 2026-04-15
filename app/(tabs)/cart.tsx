@@ -2,12 +2,17 @@ import { useRouter } from "expo-router";
 import React from "react";
 import { StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import BottomNav from "../../components/BottomNav";
+import { auth } from "../../api/firebase";
 import CartHeader from "../../components/cart/CartHeader";
 import CartList from "../../components/cart/CartList";
 import CartSummary from "../../components/cart/CartSummary";
 import EmptyCart from "../../components/cart/EmptyCart";
+import BottomNav from "../../components/ui/BottomNav";
 import { useCart } from "../../hooks/useCart";
+
+console.log("USER:", auth.currentUser);
+console.log("UID:", auth.currentUser?.uid);
+console.log("Fetching cart for:", auth.currentUser?.uid);
 
 export default function CartScreen() {
   const router = useRouter();
