@@ -1,0 +1,264 @@
+import React, { useState } from 'react';
+import { Alert, SafeAreaView, StyleSheet, Text, View, TextInput, Pressable } from 'react-native';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { RootStackParamList } from '../navigation/AppNavigator';
+import BackButton from '../components/BackButton';
+import { db } from '../api/firebase';
+
+type Props = NativeStackScreenProps<RootStackParamList, 'Payment'>;
+
+type Errors = {
+  cardNumber: string;
+  expiry: string;
+  cvc: string;
+};
+
+export default function PaymentScreen({ navigation, route }: Props) {
+  const { selectedPlan, selectedPrice } = route.params;
+  const [cardNumber, setCardNumber] = useState('');
+  const [expiry, setExpiry] = useState('');
+  const [cvc, setCvc] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [errors, setErrors] = useState<Errors>({
+    cardNumber: '',
+    expiry: '',
+    cvc: '',
+  });
+
+  const handleCardNumberChange = (value: string) => {
+    const digitsOnly = value.replace(/\D/g, '').slice(0, 16);
+    const formattedCardNumber = digitsOnly.replace(/(\d{4})(?=\d)/g, '$1 ');
+
+    setCardNumber(formattedCardNumber);
+  };
+
+  const handleExpiryChange = (value: string) => {
+    const digitsOnly = value.replace(/\D/g, '').slice(0, 4);
+
+    if (digitsOnly.length <= 2) {
+      setExpiry(digitsOnly);
+      return;
+    }
+
+    setExpiry(`${digitsOnly.slice(0, 2)}/${digitsOnly.slice(2)}`);
+  };
+
+  const handleCvcChange = (value: string) => {
+    setCvc(value.replace(/\D/g, '').slice(0, 3));
+  };
+
+  const validateFields = () => {
+    const nextErrors: Errors = {
+      cardNumber: '',
+      expiry: '',
+      cvc: '',
+    };
+
+    const cardDigits = cardNumber.replace(/\s/g, '');
+
+    if (!/^\d{16}$/.test(cardDigits)) {
+      nextErrors.cardNumber = 'Card Number must be exactly 16 digits';
+    }
+
+    if (!/^\d{2}\/\d{2}$/.test(expiry)) {
+      nextErrors.expiry = 'Expiry Date must be in MM/YY format';
+    } else {
+      const month = Number(expiry.slice(0, 2));
+      if (month < 1 || month > 12) {
+        nextErrors.expiry = 'Month must be between 01 and 12';
+      }
+    }
+
+    if (!/^\d{3}$/.test(cvc)) {
+      nextErrors.cvc = 'CVC must be exactly 3 digits';
+    }
+
+    setErrors(nextErrors);
+    return !nextErrors.cardNumber && !nextErrors.expiry && !nextErrors.cvc;
+  };
+
+  const handlePay = async () => {
+    if (isSaving) {
+      return;
+    }
+
+    if (!validateFields()) {
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      console.log('Saving subscription...');
+
+      const docRef = await addDoc(collection(db, 'subscriptions'), {
+        plan: selectedPlan,
+        price: selectedPrice,
+        createdAt: serverTimestamp(),
+      });
+
+      console.log('Subscription saved with ID:', docRef.id);
+      navigation.navigate('Success');
+    } catch (error) {
+      console.error('Failed to save subscription:', error);
+      Alert.alert('Payment failed', 'We could not save your subscription. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <SafeAreaView style={styles.safe}>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <View style={styles.backButton}>
+            <BackButton onPress={() => navigation.goBack()} />
+          </View>
+          <Text style={styles.title}>Payment</Text>
+        </View>
+
+        <View style={styles.spacer} />
+
+        <Text style={styles.selectedText}>
+          You are Selected: {selectedPlan} ({selectedPrice.trim()}/month)
+        </Text>
+
+        <Text style={styles.label}>Card Number</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="card number"
+          placeholderTextColor="#9B8F86"
+          value={cardNumber}
+          onChangeText={handleCardNumberChange}
+          keyboardType="number-pad"
+          maxLength={19}
+        />
+        {errors.cardNumber ? <Text style={styles.fieldError}>{errors.cardNumber}</Text> : null}
+
+        <View style={styles.rowLabels}>
+          <Text style={styles.label}>MM / YY</Text>
+          <Text style={styles.label}>CVC</Text>
+        </View>
+
+        <View style={styles.rowInputs}>
+          <View style={styles.inputGroup}>
+            <TextInput
+              style={[styles.input, styles.inputSmall]}
+              placeholder="MM / YY"
+              placeholderTextColor="#9B8F86"
+              value={expiry}
+              onChangeText={handleExpiryChange}
+              keyboardType="number-pad"
+              maxLength={5}
+            />
+            {errors.expiry ? <Text style={styles.fieldError}>{errors.expiry}</Text> : null}
+          </View>
+
+          <View style={styles.inputGroup}>
+            <TextInput
+              style={[styles.input, styles.inputSmall]}
+              placeholder="CVC"
+              placeholderTextColor="#9B8F86"
+              value={cvc}
+              onChangeText={handleCvcChange}
+              keyboardType="number-pad"
+              maxLength={3}
+            />
+            {errors.cvc ? <Text style={styles.fieldError}>{errors.cvc}</Text> : null}
+          </View>
+        </View>
+
+        <Pressable style={styles.button} onPress={handlePay} disabled={isSaving}>
+          <Text style={styles.buttonText}>Pay</Text>
+        </Pressable>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  safe: {
+    flex: 1,
+    backgroundColor: '#F6F3EF',
+  },
+  container: {
+    flex: 1,
+    paddingHorizontal: 26,
+  },
+  header: {
+    marginTop: 6,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  backButton: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+  },
+  title: {
+    textAlign: 'center',
+    fontSize: 22,
+    color: '#4A3A33',
+    fontWeight: '600',
+  },
+  spacer: {
+    height: 60,
+  },
+  selectedText: {
+    color: '#4A3A33',
+    fontSize: 16,
+    marginBottom: 10,
+  },
+  label: {
+    color: '#4A3A33',
+    fontSize: 16,
+    marginBottom: 10,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#E4DCD4',
+    borderRadius: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    color: '#4A3A33',
+    backgroundColor: '#F8F6F4',
+  },
+  rowLabels: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 34,
+  },
+  rowInputs: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 10,
+  },
+  inputGroup: {
+    width: '48%',
+  },
+  inputSmall: {
+    width: '100%',
+  },
+  fieldError: {
+    marginTop: 6,
+    color: '#E1463A',
+    fontSize: 12,
+  },
+  button: {
+    alignSelf: 'center',
+    marginTop: 24,
+    backgroundColor: '#FF8A5B',
+    paddingVertical: 12,
+    paddingHorizontal: 44,
+    borderRadius: 18,
+    minWidth: 140,
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+});
