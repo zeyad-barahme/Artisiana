@@ -12,17 +12,13 @@ import {
 import { useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { useRouter, type Href } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { signInWithEmailAndPassword } from "firebase/auth";
+
+import { auth } from "@/firebase";
 
 type LoginForm = {
   email: string;
   password: string;
-};
-
-type StoredUser = {
-  email: string;
-  password: string;
-  [key: string]: unknown;
 };
 
 export default function Login() {
@@ -39,24 +35,13 @@ export default function Login() {
 
   const onSubmit = async (data: LoginForm) => {
     try {
-      const storedUsers = await AsyncStorage.getItem("users");
-      const users: StoredUser[] = storedUsers ? JSON.parse(storedUsers) : [];
-
-      // 🔍 نبحث عن المستخدم
-      const user = users.find(
-        (u) => u.email === data.email && u.password === data.password
-      );
-
-      if (user) {
-        await AsyncStorage.setItem("currentUser", JSON.stringify(user));
-        Alert.alert("Success", "Login successful 🎉");
-        router.push("/home" as Href); // 👉 يوديه للصفحة الجديدة
-      } else {
-        Alert.alert("Error", "Invalid email or password");
-      }
+      await signInWithEmailAndPassword(auth, data.email.trim(), data.password);
+      Alert.alert("Success", "Login successful 🎉");
+      router.push("/home" as Href); // 👉 يوديه للصفحة الجديدة
 
     } catch (e) {
       console.log(e);
+      Alert.alert("Error", "Invalid email or password");
     }
   };
 

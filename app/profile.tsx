@@ -8,32 +8,38 @@ import {
   Image,
 } from "react-native";
 import { useEffect, useState } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter, type Href } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 
-type CurrentUser = {
-  name?: string;
-  email?: string;
-  image?: string | null;
-  [key: string]: unknown;
-};
+import { auth } from "@/firebase";
+import { uploadAvatar } from "@/services/storage";
+import { getUserProfile, updateUserProfile, type UserProfile } from "@/services/user-profile";
 
 export default function Profile() {
-  const [user, setUser] = useState<CurrentUser | null>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [image, setImage] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
-    const getUser = async () => {
-      const data = await AsyncStorage.getItem("currentUser");
-      if (data) {
-        const parsed = JSON.parse(data) as CurrentUser;
-        setUser(parsed);
-        setImage(parsed.image || null); 
+    const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (!firebaseUser) {
+        setUser(null);
+        setImage(null);
+        return;
       }
-    };
-    getUser();
+      const profile = await getUserProfile(firebaseUser.uid);
+      const fallback: UserProfile = {
+        uid: firebaseUser.uid,
+        name: firebaseUser.displayName ?? "",
+        email: firebaseUser.email ?? "",
+        imageUrl: null,
+      };
+      const resolved = profile ?? fallback;
+      setUser(resolved);
+      setImage(resolved.imageUrl ?? null);
+    });
+    return () => unsub();
   }, []);
 
   // 📸 اختيار صورة
@@ -51,10 +57,14 @@ export default function Profile() {
       const uri = asset.uri;
       setImage(uri);
 
-      // 🔥 خزّن الصورة مع المستخدم
-      const updatedUser = { ...user, image: uri };
-      setUser(updatedUser);
-      await AsyncStorage.setItem("currentUser", JSON.stringify(updatedUser));
+      try {
+        const url = await uploadAvatar({ uid: user.uid, uri });
+        await updateUserProfile(user.uid, { imageUrl: url });
+        setUser({ ...user, imageUrl: url });
+        setImage(url);
+      } catch (e) {
+        console.log(e);
+      }
     }
   };
 
@@ -103,7 +113,7 @@ export default function Profile() {
         <TouchableOpacity
           style={[styles.logoutBtn, { marginHorizontal: 15 }]}
           onPress={async () => {
-            await AsyncStorage.removeItem("currentUser");
+            await signOut(auth);
             router.replace("/login" as Href);
           }}
         >

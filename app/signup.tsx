@@ -11,7 +11,10 @@ import {
 import { useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { useRouter, type Href } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+
+import { auth } from "@/firebase";
+import { createUserProfile } from "@/services/user-profile";
 
 type SignupForm = {
   name: string;
@@ -19,11 +22,6 @@ type SignupForm = {
   phone: string;
   password: string;
   confirmPassword: string;
-};
-
-type StoredUser = {
-  email: string;
-  [key: string]: unknown;
 };
 
 export default function Signup() {
@@ -50,19 +48,17 @@ export default function Signup() {
     console.log("SUBMIT 🔥", data);
 
     try {
-      const existingUsers = await AsyncStorage.getItem("users");
-      let users: StoredUser[] = existingUsers ? JSON.parse(existingUsers) : [];
-
-      // 🔴 check duplicate email
-      const userExists = users.find((u) => u.email === data.email);
-      if (userExists) {
-        Alert.alert("Error", "Email already exists");
-        return;
-      }
-
-      // ✅ save new user
-      users.push(data);
-      await AsyncStorage.setItem("users", JSON.stringify(users));
+      const cred = await createUserWithEmailAndPassword(
+        auth,
+        data.email.trim(),
+        data.password
+      );
+      await createUserProfile({
+        uid: cred.user.uid,
+        name: data.name,
+        email: data.email.trim(),
+        phone: data.phone,
+      });
 
       Alert.alert("Success", "Account created successfully 🎉");
 
@@ -71,6 +67,7 @@ export default function Signup() {
 
     } catch (e) {
       console.log("ERROR:", e);
+      Alert.alert("Error", "Signup failed. Please try again.");
     }
   };
 
