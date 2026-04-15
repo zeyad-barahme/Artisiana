@@ -7,6 +7,7 @@ import ReviewScreenShell from '@/components/reviews/review-screen-shell';
 import StarRating from '@/components/reviews/star-rating';
 import type { AddReviewForm, ReviewPayload } from '@/components/reviews/types';
 import { createReview } from '@/services/reviews/reviews.service';
+import type { Href } from 'expo-router';
 
 const initialFormState: AddReviewForm = {
   rating: 0,
@@ -47,7 +48,7 @@ export default function AddReview() {
       Alert.alert('Review submitted', 'Your review was saved successfully.', [
         {
           text: 'OK',
-          onPress: () => router.replace('/Reviews/Reviews'),
+          onPress: () => router.replace('/Reviews' as Href),
         },
       ]);
     } catch {
