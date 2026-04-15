@@ -6,10 +6,12 @@ export default function TabLayout() {
     <Stack
       screenOptions={{
         headerShown: false,
-      }}>
-      <Stack.Screen name="index" />
-      <Stack.Screen name="subscription" />
-      <Stack.Screen name="explore" />
-    </Stack>
+        tabBarStyle: { display: 'none' },
+      }}
+    >
+      <Tabs.Screen name="index" />
+      <Tabs.Screen name="search" />
+      <Tabs.Screen name="explore" />
+    </Tabs>
   );
 }
