@@ -1,20 +1,40 @@
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getApp, getApps, initializeApp, type FirebaseApp } from "firebase/app";
+import type { Auth, Persistence } from "firebase/auth";
+import * as firebaseAuth from "firebase/auth";
+import { getFirestore, type Firestore } from "firebase/firestore";
+import { getStorage, type FirebaseStorage } from "firebase/storage";
 
-// Your web app's Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyBjpZ9Y1wkrGJWQNy9Uv5v1lTuWmWnEXe0",
   authDomain: "artisianaapp.firebaseapp.com",
   projectId: "artisianaapp",
   storageBucket: "artisianaapp.firebasestorage.app",
   messagingSenderId: "302019588350",
-  appId: "1:302019588350:web:9b5d95114850ac932d35af"
+  appId: "1:302019588350:web:9b5d95114850ac932d35af",
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+export const app: FirebaseApp = getApps().length
+  ? getApp()
+  : initializeApp(firebaseConfig);
 
-export const db = getFirestore(app);
+export const auth: Auth = (() => {
+  try {
+    const getReactNativePersistence = (
+      firebaseAuth as unknown as {
+        getReactNativePersistence?: (storage: unknown) => Persistence;
+      }
+    ).getReactNativePersistence;
+
+    return firebaseAuth.initializeAuth(app, {
+      persistence: getReactNativePersistence
+        ? getReactNativePersistence(AsyncStorage)
+        : undefined,
+    });
+  } catch {
+    return firebaseAuth.getAuth(app);
+  }
+})();
+
+export const db: Firestore = getFirestore(app);
+export const storage: FirebaseStorage = getStorage(app);

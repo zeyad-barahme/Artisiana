@@ -13,6 +13,7 @@ export default function TabLayout() {
       <Tabs.Screen name="search" />
       <Tabs.Screen name="explore" />
       <Tabs.Screen name="subscription" />
+      <Tabs.Screen name="cart" />
     </Tabs>
   );
 }
