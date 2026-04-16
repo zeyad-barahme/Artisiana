@@ -1,3 +1,4 @@
+import { Stack } from "expo-router";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useFonts } from "expo-font";
 
@@ -35,6 +36,16 @@ export default function RootLayout() {
   }
 
   return (
+    <Stack screenOptions={{ headerShown: false }}>
+      
+      {/* Tabs group */}
+      <Stack.Screen name="(tabs)" />
+
+      {/* صفحات خارج التابات */}
+      <Stack.Screen name="cart" />
+      <Stack.Screen name="modal" options={{ presentation: "modal" }} />
+
+    </Stack>
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
