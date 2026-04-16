@@ -30,23 +30,19 @@ export default function BottomNavBar() {
 
       <View style={styles.logoCircle}>
         <Image
-          source={require('../../assets/images/logo.png')}
+          source={require('../../assets/images/Logo.png')}
           style={styles.centerLogo}
           resizeMode="contain"
         />
       </View>
 
-      <TouchableOpacity>
-        <Ionicons name="notifications-outline" size={28} color="#F47C48" />
-      </TouchableOpacity>
+      <TouchableOpacity onPress={() => router.push("/checkout")}>
+              <Feather name="bell" size={24} color="#FF7F50" />
+            </TouchableOpacity>
 
-      <TouchableOpacity>
-        <MaterialCommunityIcons
-          name="account-circle-outline"
-          size={30}
-          color="#F47C48"
-        />
-      </TouchableOpacity>
+      <TouchableOpacity onPress={() => router.push("/checkout")}>
+              <Feather name="user" size={24} color="#FF7F50" />
+            </TouchableOpacity>
     </View>
   );
 }

@@ -2,12 +2,12 @@ import React from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router } from 'expo-router';
 import type { Href } from 'expo-router';
-
+import { Feather } from '@expo/vector-icons';
 export default function AppBar() {
   return (
     <View style={styles.wrapper}>
       <Image
-        source={require('../../assets/images/logo.png')}
+        source={require('../../assets/images/Logo.png')}
         style={styles.logoImage}
         resizeMode="contain"
       />
@@ -22,10 +22,10 @@ export default function AppBar() {
         <Text style={styles.searchIcon}>⌕</Text>
         <Text style={styles.searchText}>search</Text>
       </TouchableOpacity>
-
-      <TouchableOpacity style={styles.cartButton} activeOpacity={0.85}>
-        <Text style={styles.cartIcon}>🛒</Text>
-      </TouchableOpacity>
+       
+      <TouchableOpacity onPress={() => router.push("/cart")}>
+            <Feather name="shopping-cart" size={24} color="#FF7F50" />
+          </TouchableOpacity>
     </View>
   );
 }

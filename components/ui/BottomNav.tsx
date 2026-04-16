@@ -7,7 +7,7 @@ export default function BottomNav() {
   const router = useRouter();
   return (
     <View style={styles.container}>
-      <TouchableOpacity onPress={() => router.push("/checkout")}>
+      <TouchableOpacity onPress={() => router.push("/")}>
         <Feather name="home" size={24} color="#FF7F50" />
       </TouchableOpacity>
 
@@ -17,7 +17,7 @@ export default function BottomNav() {
 
       <View style={styles.centerLogo}>
         <Image
-          source={require("@/assets/images/Logo.png")}
+          source={require('../../assets/images/Logo.png')}
           style={styles.logo}
         />
       </View>

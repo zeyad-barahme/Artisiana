@@ -9,11 +9,7 @@ import CartSummary from "../../components/cart/CartSummary";
 import EmptyCart from "../../components/cart/EmptyCart";
 import BottomNav from "../../components/ui/BottomNav";
 import { useCart } from "../../hooks/useCart";
-
-console.log("USER:", auth.currentUser);
-console.log("UID:", auth.currentUser?.uid);
-console.log("Fetching cart for:", auth.currentUser?.uid);
-
+import AppBar from '../../components/layout/AppBar';
 export default function CartScreen() {
   const router = useRouter();
 
@@ -28,7 +24,7 @@ export default function CartScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
-      <CartHeader onSearch={setSearch} />
+      <AppBar />
 
       <Text style={styles.title}>Your Cart</Text>
 
