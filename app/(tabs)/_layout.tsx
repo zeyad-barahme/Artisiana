@@ -1,4 +1,5 @@
-import { Tabs } from "expo-router";
+import { Tabs } from 'expo-router';
+import React from 'react';
 
 export default function Layout() {
   return (
@@ -12,6 +13,8 @@ export default function Layout() {
       <Tabs.Screen name="accessories" />
       <Tabs.Screen name="search" />
       <Tabs.Screen name="explore" />
+      <Tabs.Screen name="subscription" />
+      <Tabs.Screen name="cart" />
     </Tabs>
   );
 }
