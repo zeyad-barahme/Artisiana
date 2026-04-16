@@ -1,13 +1,18 @@
-import { Tabs } from "expo-router";
+import { Tabs } from 'expo-router';
+import React from 'react';
 
-export default function Layout() {
+export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarStyle: { display: "none" },
+        tabBarStyle: { display: 'none' },
       }}
     >
+      <Tabs.Screen name="index" />
+      <Tabs.Screen name="search" />
+      <Tabs.Screen name="explore" />
+      <Tabs.Screen name="subscription" />
       <Tabs.Screen name="cart" />
     </Tabs>
   );
