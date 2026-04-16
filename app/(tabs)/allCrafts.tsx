@@ -3,9 +3,9 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Appbar } from "react-native-paper";
-import AppHeader from "../../components/AppHeader";
+import AppBar from '../../components/layout/AppBar';
 import ProductCard from "../../components/ProductCard1w";
-
+import BottomNavBar from '../../components/layout/BottomNavBar';
 export default function Home() {
   const router = useRouter();
 
@@ -34,7 +34,7 @@ export default function Home() {
           setLastScrollY(currentY);
         }}
       >
-        <AppHeader />
+        <AppBar />
 
         <Image
           source={require("../../assets/images/A1/08bfaa47c6dec68aae046dcf5e766154b122ef7e.png")}
@@ -97,41 +97,9 @@ export default function Home() {
         </View>
       </ScrollView>
 
-      <View
-        style={[
-          styles.bottomNav,
-          { transform: [{ translateY: showNav ? 0 : 100 }] },
-        ]}
-      >
-        <Appbar.Action
-          icon="home-outline"
-          color="#FF5E22"
-          onPress={() => router.push("/temp")}
-        />
-        <Appbar.Action
-          icon="apps"
-          color="#FF5E22"
-          onPress={() => router.push("/temp")}
-        />
-
-        <View style={styles.centerLogo}>
-          <Image
-            source={require("../../assets/images/A1/85baf6ab0c07af4b4fc9f32f981b7edb09861f2c.png")}
-            style={styles.logoBottom}
-          />
-        </View>
-
-        <Appbar.Action
-          icon="bell-outline"
-          color="#FF5E22"
-          onPress={() => router.push("/temp")}
-        />
-        <Appbar.Action
-          icon="account-outline"
-          color="#FF5E22"
-          onPress={() => router.push("/temp")}
-        />
-      </View>
+      
+         <BottomNavBar />
+      
     </View>
   );
 }

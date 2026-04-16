@@ -1,5 +1,7 @@
 import React from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { router } from 'expo-router';
+import type { Href } from 'expo-router';
 
 type Props = {
   title: string;
@@ -7,13 +9,23 @@ type Props = {
 };
 
 export default function CategoryCard({ title, image }: Props) {
+  const handlePress = () => {
+    if (title === 'All Crafts') {
+      router.push('/(tabs)/allCrafts' as Href);
+    } else if (title === 'Ceramics') {
+      router.push('/(tabs)/ceramics' as Href);
+    } else if (title === 'Accessories') {
+      router.push('/(tabs)/accessories' as Href);
+    }
+  };
+
   return (
-    <View style={styles.card}>
+    <TouchableOpacity style={styles.card} onPress={handlePress} activeOpacity={0.85}>
       <Image source={{ uri: image }} style={styles.image} />
       <Text style={styles.title} numberOfLines={1}>
         {title}
       </Text>
-    </View>
+    </TouchableOpacity>
   );
 }
 

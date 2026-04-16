@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   FlatList,
   Image,
   SafeAreaView,
@@ -12,18 +13,76 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import type { Href } from 'expo-router';
+import { collection, getDocs } from 'firebase/firestore';
+
 import CategoryCard from '../../components/common/CategoryCard';
 import ProductCard from '../../components/common/ProductCard';
 import AppBar from '../../components/layout/AppBar';
 import BottomNavBar from '../../components/layout/BottomNavBar';
-import { categories, heroData, trendingProducts } from '../../components/data/homeData';
+import { db } from '../../api/firebase';
+import { heroData } from '../../components/data/homeData';
 
 const BG = '#FFF7F3';
 const TEXT = '#222222';
 const CARD = '#FFFFFF';
 const PRIMARY = '#F47C48';
 
+type Category = {
+  id: string;
+  title: string;
+  image: string;
+};
+
+type Product = {
+  id: string;
+  title: string;
+  image: string;
+  price: number;
+  rating: number;
+  category: string;
+};
+
 export default function HomeScreen() {
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
+  const [loadingProducts, setLoadingProducts] = useState(true);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, 'categories'));
+        const categoriesData = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...(doc.data() as Omit<Category, 'id'>),
+        }));
+        setCategories(categoriesData);
+      } catch (error) {
+        console.log('Error fetching categories:', error);
+      } finally {
+        setLoadingCategories(false);
+      }
+    };
+
+    const fetchProducts = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, 'products'));
+        const productsData = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...(doc.data() as Omit<Product, 'id'>),
+        }));
+        setProducts(productsData);
+      } catch (error) {
+        console.log('Error fetching products:', error);
+      } finally {
+        setLoadingProducts(false);
+      }
+    };
+
+    fetchCategories();
+    fetchProducts();
+  }, []);
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor={BG} />
@@ -47,16 +106,20 @@ export default function HomeScreen() {
           <Text style={styles.sectionTitle}>Categories</Text>
         </View>
 
-        <FlatList
-          data={categories}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <CategoryCard title={item.title} image={item.image} />
-          )}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.horizontalListContent}
-        />
+        {loadingCategories ? (
+          <ActivityIndicator size="small" color={PRIMARY} style={styles.loader} />
+        ) : (
+          <FlatList
+            data={categories}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <CategoryCard title={item.title} image={item.image} />
+            )}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.horizontalListContent}
+          />
+        )}
 
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Trending Now</Text>
@@ -69,22 +132,26 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        <FlatList
-          data={trendingProducts}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <ProductCard
-              title={item.title}
-              category={item.category}
-              price={item.price}
-              rating={item.rating}
-              image={item.image}
-            />
-          )}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.horizontalListContent}
-        />
+        {loadingProducts ? (
+          <ActivityIndicator size="small" color={PRIMARY} style={styles.loader} />
+        ) : (
+          <FlatList
+            data={products}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <ProductCard
+                title={item.title}
+                category={item.category}
+                price={item.price}
+                rating={item.rating}
+                image={item.image}
+              />
+            )}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.horizontalListContent}
+          />
+        )}
 
         <View style={styles.bottomSpacing} />
       </ScrollView>
@@ -154,6 +221,9 @@ const styles = StyleSheet.create({
   },
   horizontalListContent: {
     paddingRight: 10,
+  },
+  loader: {
+    marginVertical: 20,
   },
   bottomSpacing: {
     height: 120,

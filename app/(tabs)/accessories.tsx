@@ -2,9 +2,9 @@ import { Rancho_400Regular, useFonts } from "@expo-google-fonts/rancho";
 import { useState } from "react";
 import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Appbar } from "react-native-paper";
-import AppHeader from "../../components/AppHeader";
+import AppBar from '../../components/layout/AppBar';
 import ProductCard from "../../components/ProductCard1w";
-
+import BottomNavBar from '../../components/layout/BottomNavBar';
 export default function Ceramics() {
   const [fontsLoaded] = useFonts({
     Rancho_400Regular,
@@ -37,7 +37,8 @@ export default function Ceramics() {
         }}
       >
         {/* 🔥 App Bar */}
-        <AppHeader />
+        <AppBar />
+        
 
         {/* 🖼️ Cover */}
         <Image
@@ -95,26 +96,7 @@ export default function Ceramics() {
       </ScrollView>
 
       {/* 🔥 Bottom Nav */}
-
-      <View
-        style={[
-          styles.bottomNav,
-          { transform: [{ translateY: showNav ? 0 : 100 }] },
-        ]}
-      >
-        <Appbar.Action icon="home-outline" color="#FF5E22" />
-        <Appbar.Action icon="apps" color="#FF5E22" />
-
-        <View style={styles.centerLogo}>
-          <Image
-            source={require("../../assets/images/A1/85baf6ab0c07af4b4fc9f32f981b7edb09861f2c.png")}
-            style={styles.logoBottom}
-          />
-        </View>
-
-        <Appbar.Action icon="bell-outline" color="#FF5E22" />
-        <Appbar.Action icon="account-outline" color="#FF5E22" />
-      </View>
+       <BottomNavBar />
     </View>
   );
 }

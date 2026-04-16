@@ -2,7 +2,7 @@ import React from 'react';
 import { Image, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { router, usePathname } from 'expo-router';
 import type { Href } from 'expo-router';
-import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Feather, Ionicons } from '@expo/vector-icons';
 
 export default function BottomNavBar() {
   const pathname = usePathname();
@@ -12,18 +12,22 @@ export default function BottomNavBar() {
 
   return (
     <View style={styles.wrapper}>
-      <TouchableOpacity onPress={() => router.push('/(tabs)' as Href)}>
-        <Feather
-          name="home"
-          size={28}
-          color={isHome ? '#F47C48' : '#F47C48'}
-        />
+      <TouchableOpacity
+        style={styles.iconButton}
+        onPress={() => router.push('/(tabs)' as Href)}
+        activeOpacity={0.8}
+      >
+        <Feather name="home" size={22} color={isHome ? '#F47C48' : '#F47C48'} />
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => router.push('/(tabs)/explore' as Href)}>
+      <TouchableOpacity
+        style={styles.iconButton}
+        onPress={() => router.push('/(tabs)/explore' as Href)}
+        activeOpacity={0.8}
+      >
         <Ionicons
           name="grid-outline"
-          size={28}
+          size={22}
           color={isExplore ? '#F47C48' : '#F47C48'}
         />
       </TouchableOpacity>
@@ -36,13 +40,13 @@ export default function BottomNavBar() {
         />
       </View>
 
-      <TouchableOpacity onPress={() => router.push("/checkout")}>
-              <Feather name="bell" size={24} color="#FF7F50" />
-            </TouchableOpacity>
+      <TouchableOpacity style={styles.iconButton} activeOpacity={0.8}>
+        <Feather name="bell" size={21} color="#F47C48" />
+      </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => router.push("/checkout")}>
-              <Feather name="user" size={24} color="#FF7F50" />
-            </TouchableOpacity>
+      <TouchableOpacity style={styles.iconButton} activeOpacity={0.8}>
+        <Feather name="user" size={21} color="#F47C48" />
+      </TouchableOpacity>
     </View>
   );
 }
@@ -50,32 +54,34 @@ export default function BottomNavBar() {
 const styles = StyleSheet.create({
   wrapper: {
     position: 'absolute',
-    bottom: 16,
-    left: 18,
-    right: 18,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 65,
     backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    paddingVertical: 16,
-    paddingHorizontal: 26,
+    paddingHorizontal: 28,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#F1E6DF',
+  },
+  iconButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   logoCircle: {
-    width: 62,
-    height: 62,
-    borderRadius: 31,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     backgroundColor: '#F5E7DE',
     justifyContent: 'center',
     alignItems: 'center',
-    marginHorizontal: 4,
   },
   centerLogo: {
-    width: 42,
-    height: 42,
+    width: 32,
+    height: 32,
   },
 });

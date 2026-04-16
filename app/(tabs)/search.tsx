@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
   FlatList,
   SafeAreaView,
   StyleSheet,
@@ -7,26 +8,58 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { collection, getDocs } from 'firebase/firestore';
+
 import ProductCard from '../../components/common/ProductCard';
 import BottomNavBar from '../../components/layout/BottomNavBar';
-import { trendingProducts } from '../../components/data/homeData';
+import { db } from '../../api/firebase';
 
 const BG = '#FFF7F3';
 
+type Product = {
+  id: string;
+  title: string;
+  image: string;
+  price: number;
+  rating: number;
+  category: string;
+};
+
 export default function SearchScreen() {
   const [search, setSearch] = useState('');
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, 'products'));
+        const productsData = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...(doc.data() as Omit<Product, 'id'>),
+        }));
+        setProducts(productsData);
+      } catch (error) {
+        console.log('Error fetching products:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
 
   const filteredProducts = useMemo(() => {
     const text = search.trim().toLowerCase();
 
-    if (!text) return trendingProducts;
+    if (!text) return products;
 
-    return trendingProducts.filter(
+    return products.filter(
       (item) =>
         item.title.toLowerCase().includes(text) ||
         item.category.toLowerCase().includes(text)
     );
-  }, [search]);
+  }, [search, products]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -41,26 +74,30 @@ export default function SearchScreen() {
           placeholderTextColor="#999"
         />
 
-        <FlatList
-          data={filteredProducts}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <View style={styles.cardWrapper}>
-              <ProductCard
-                title={item.title}
-                category={item.category}
-                price={item.price}
-                rating={item.rating}
-                image={item.image}
-              />
-            </View>
-          )}
-          contentContainerStyle={{ paddingBottom: 140 }}
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={
-            <Text style={styles.emptyText}>No products found</Text>
-          }
-        />
+        {loading ? (
+          <ActivityIndicator size="small" color="#F47C48" style={styles.loader} />
+        ) : (
+          <FlatList
+            data={filteredProducts}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <View style={styles.cardWrapper}>
+                <ProductCard
+                  title={item.title}
+                  category={item.category}
+                  price={item.price}
+                  rating={item.rating}
+                  image={item.image}
+                />
+              </View>
+            )}
+            contentContainerStyle={{ paddingBottom: 140 }}
+            showsVerticalScrollIndicator={false}
+            ListEmptyComponent={
+              <Text style={styles.emptyText}>No products found</Text>
+            }
+          />
+        )}
       </View>
 
       <BottomNavBar />
@@ -102,5 +139,8 @@ const styles = StyleSheet.create({
     marginTop: 40,
     fontSize: 16,
     color: '#777',
+  },
+  loader: {
+    marginTop: 30,
   },
 });

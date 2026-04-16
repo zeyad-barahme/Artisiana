@@ -7,7 +7,7 @@ import CartHeader from "../../components/cart/CartHeader";
 import CartList from "../../components/cart/CartList";
 import CartSummary from "../../components/cart/CartSummary";
 import EmptyCart from "../../components/cart/EmptyCart";
-import BottomNav from "../../components/ui/BottomNav";
+import BottomNavBar from '../../components/layout/BottomNavBar';
 import { useCart } from "../../hooks/useCart";
 import AppBar from '../../components/layout/AppBar';
 export default function CartScreen() {
@@ -43,7 +43,7 @@ export default function CartScreen() {
         </>
       )}
 
-      <BottomNav />
+     <BottomNavBar />
     </SafeAreaView>
   );
 }
