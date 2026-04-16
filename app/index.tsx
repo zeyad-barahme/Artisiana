@@ -1,5 +1,5 @@
-import { Redirect, type Href } from 'expo-router';
+import { Redirect, type Href } from "expo-router";
 
 export default function Index() {
-  return <Redirect href={'/Reviews/Reviews' as Href} />;
+  return <Redirect href={'/(tabs)/allCrafts' as Href} />;
 }
