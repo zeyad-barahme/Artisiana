@@ -22,7 +22,7 @@ export default function BottomNavBar() {
 
       <TouchableOpacity
         style={styles.iconButton}
-        onPress={() => router.push('/(tabs)/explore' as Href)}
+        onPress={() => router.push('/(tabs)/subscription' as Href)}
         activeOpacity={0.8}
       >
         <Ionicons
@@ -40,7 +40,9 @@ export default function BottomNavBar() {
         />
       </View>
 
-      <TouchableOpacity style={styles.iconButton} activeOpacity={0.8}>
+      <TouchableOpacity style={styles.iconButton} activeOpacity={0.8} 
+        onPress={() => router.push("/(tabs)/notification" as Href)}
+      >
         <Feather name="bell" size={21} color="#F47C48" />
       </TouchableOpacity>
 

@@ -22,7 +22,7 @@ export default function AppBar() {
         <Text style={styles.searchIcon}>⌕</Text>
         <Text style={styles.searchText}>search</Text>
       </TouchableOpacity>
-       
+      
       <TouchableOpacity onPress={() => router.push("/cart")}>
             <Feather name="shopping-cart" size={24} color="#FF7F50" />
           </TouchableOpacity>
