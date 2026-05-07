@@ -1,108 +1,125 @@
 import React, { useState } from 'react';
-import { Alert, SafeAreaView, StyleSheet, Text, View, TextInput, Pressable } from 'react-native';
+import {
+  Alert,
+  Pressable,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { useStripe } from '@stripe/stripe-react-native';
+
 import { RootStackParamList } from '../navigation/AppNavigator';
 import BackButton from '../components/BackButton';
-import { db } from '../api/firebase';
+import { auth } from '../api/firebase';
+import {
+  createPendingOrder,
+  updateOrderPaymentState,
+} from '../services/orders/order.service';
+import {
+  createPaymentSheet,
+  getStripePublishableKey,
+  handleStripePayment,
+  parsePriceToAmount,
+} from '../services/payments/payment.service';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Payment'>;
 
-type Errors = {
-  cardNumber: string;
-  expiry: string;
-  cvc: string;
-};
-
 export default function PaymentScreen({ navigation, route }: Props) {
   const { selectedPlan, selectedPrice } = route.params;
-  const [cardNumber, setCardNumber] = useState('');
-  const [expiry, setExpiry] = useState('');
-  const [cvc, setCvc] = useState('');
   const [isSaving, setIsSaving] = useState(false);
-  const [errors, setErrors] = useState<Errors>({
-    cardNumber: '',
-    expiry: '',
-    cvc: '',
-  });
-
-  const handleCardNumberChange = (value: string) => {
-    const digitsOnly = value.replace(/\D/g, '').slice(0, 16);
-    const formattedCardNumber = digitsOnly.replace(/(\d{4})(?=\d)/g, '$1 ');
-
-    setCardNumber(formattedCardNumber);
-  };
-
-  const handleExpiryChange = (value: string) => {
-    const digitsOnly = value.replace(/\D/g, '').slice(0, 4);
-
-    if (digitsOnly.length <= 2) {
-      setExpiry(digitsOnly);
-      return;
-    }
-
-    setExpiry(`${digitsOnly.slice(0, 2)}/${digitsOnly.slice(2)}`);
-  };
-
-  const handleCvcChange = (value: string) => {
-    setCvc(value.replace(/\D/g, '').slice(0, 3));
-  };
-
-  const validateFields = () => {
-    const nextErrors: Errors = {
-      cardNumber: '',
-      expiry: '',
-      cvc: '',
-    };
-
-    const cardDigits = cardNumber.replace(/\s/g, '');
-
-    if (!/^\d{16}$/.test(cardDigits)) {
-      nextErrors.cardNumber = 'Card Number must be exactly 16 digits';
-    }
-
-    if (!/^\d{2}\/\d{2}$/.test(expiry)) {
-      nextErrors.expiry = 'Expiry Date must be in MM/YY format';
-    } else {
-      const month = Number(expiry.slice(0, 2));
-      if (month < 1 || month > 12) {
-        nextErrors.expiry = 'Month must be between 01 and 12';
-      }
-    }
-
-    if (!/^\d{3}$/.test(cvc)) {
-      nextErrors.cvc = 'CVC must be exactly 3 digits';
-    }
-
-    setErrors(nextErrors);
-    return !nextErrors.cardNumber && !nextErrors.expiry && !nextErrors.cvc;
-  };
+  const { initPaymentSheet, presentPaymentSheet } = useStripe();
 
   const handlePay = async () => {
     if (isSaving) {
       return;
     }
 
-    if (!validateFields()) {
-      return;
-    }
-
     setIsSaving(true);
+    let orderId: string | null = null;
+    let stripePaymentIntentId: string | null = null;
 
     try {
-      console.log('Saving subscription...');
+      if (!getStripePublishableKey()) {
+        throw new Error(
+          'Missing EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY. Add your Stripe publishable key before opening payments.',
+        );
+      }
 
-      const docRef = await addDoc(collection(db, 'subscriptions'), {
-        plan: selectedPlan,
-        price: selectedPrice,
-        createdAt: serverTimestamp(),
+      const amount = parsePriceToAmount(selectedPrice);
+      orderId = await createPendingOrder({
+        amount,
+        currency: 'usd',
+        selectedPlan,
+        selectedPrice,
+        userId: auth.currentUser?.uid ?? null,
       });
 
-      console.log('Subscription saved with ID:', docRef.id);
-      navigation.navigate('Success');
+      const paymentSheet = await createPaymentSheet({
+        amount,
+        currency: 'usd',
+        orderId,
+        selectedPlan,
+        userId: auth.currentUser?.uid ?? null,
+        initPaymentSheet,
+      });
+      stripePaymentIntentId = paymentSheet.stripePaymentIntentId;
+
+      await updateOrderPaymentState({
+        orderId,
+        paymentStatus: 'pending',
+        stripePaymentIntentId,
+      });
+
+      const paymentResult = await handleStripePayment(presentPaymentSheet);
+
+      if (paymentResult.status === 'completed') {
+        await updateOrderPaymentState({
+          orderId,
+          paymentStatus: 'processing_verification',
+          stripePaymentIntentId,
+        });
+
+        navigation.navigate('Success');
+        return;
+      }
+
+      await updateOrderPaymentState({
+        orderId,
+        paymentStatus:
+          paymentResult.status === 'cancelled' ? 'cancelled' : 'failed',
+        stripePaymentIntentId,
+      });
+
+      Alert.alert(
+        paymentResult.status === 'cancelled'
+          ? 'Payment cancelled'
+          : 'Payment failed',
+        paymentResult.message,
+      );
     } catch (error) {
-      console.error('Failed to save subscription:', error);
-      Alert.alert('Payment failed', 'We could not save your subscription. Please try again.');
+      console.error('Failed to start Stripe payment:', error);
+
+      if (orderId) {
+        try {
+          await updateOrderPaymentState({
+            orderId,
+            paymentStatus: 'failed',
+            stripePaymentIntentId,
+          });
+        } catch (updateError) {
+          console.error('Failed to update order after payment error:', updateError);
+        }
+      }
+
+      Alert.alert(
+        'Payment unavailable',
+        error instanceof Error
+          ? error.message
+          : 'We could not start your payment. Please try again.',
+      );
     } finally {
       setIsSaving(false);
     }
@@ -126,15 +143,12 @@ export default function PaymentScreen({ navigation, route }: Props) {
 
         <Text style={styles.label}>Card Number</Text>
         <TextInput
+          editable={false}
+          selectTextOnFocus={false}
           style={styles.input}
-          placeholder="card number"
+          placeholder="entered securely in Stripe"
           placeholderTextColor="#9B8F86"
-          value={cardNumber}
-          onChangeText={handleCardNumberChange}
-          keyboardType="number-pad"
-          maxLength={19}
         />
-        {errors.cardNumber ? <Text style={styles.fieldError}>{errors.cardNumber}</Text> : null}
 
         <View style={styles.rowLabels}>
           <Text style={styles.label}>MM / YY</Text>
@@ -144,33 +158,33 @@ export default function PaymentScreen({ navigation, route }: Props) {
         <View style={styles.rowInputs}>
           <View style={styles.inputGroup}>
             <TextInput
+              editable={false}
+              selectTextOnFocus={false}
               style={[styles.input, styles.inputSmall]}
-              placeholder="MM / YY"
+              placeholder="Stripe Sheet"
               placeholderTextColor="#9B8F86"
-              value={expiry}
-              onChangeText={handleExpiryChange}
-              keyboardType="number-pad"
-              maxLength={5}
             />
-            {errors.expiry ? <Text style={styles.fieldError}>{errors.expiry}</Text> : null}
           </View>
 
           <View style={styles.inputGroup}>
             <TextInput
+              editable={false}
+              selectTextOnFocus={false}
               style={[styles.input, styles.inputSmall]}
-              placeholder="CVC"
+              placeholder="Stripe Sheet"
               placeholderTextColor="#9B8F86"
-              value={cvc}
-              onChangeText={handleCvcChange}
-              keyboardType="number-pad"
-              maxLength={3}
             />
-            {errors.cvc ? <Text style={styles.fieldError}>{errors.cvc}</Text> : null}
           </View>
         </View>
 
+        <Text style={styles.helperText}>
+          Your payment details are collected in Stripe&apos;s secure payment sheet after you tap Pay.
+        </Text>
+
         <Pressable style={styles.button} onPress={handlePay} disabled={isSaving}>
-          <Text style={styles.buttonText}>Pay</Text>
+          <Text style={styles.buttonText}>
+            {isSaving ? 'Processing...' : 'Pay'}
+          </Text>
         </Pressable>
       </View>
     </SafeAreaView>
@@ -241,10 +255,11 @@ const styles = StyleSheet.create({
   inputSmall: {
     width: '100%',
   },
-  fieldError: {
-    marginTop: 6,
-    color: '#E1463A',
-    fontSize: 12,
+  helperText: {
+    marginTop: 16,
+    color: '#7A6D64',
+    fontSize: 13,
+    lineHeight: 18,
   },
   button: {
     alignSelf: 'center',
