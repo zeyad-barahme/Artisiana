@@ -1,5 +1,4 @@
-import { Tabs } from 'expo-router';
-import React from 'react';
+import { Tabs } from "expo-router";
 
 export default function Layout() {
   return (
@@ -7,7 +6,7 @@ export default function Layout() {
       initialRouteName="index"
       screenOptions={{
         headerShown: false,
-        tabBarStyle: { display: 'none' },
+        tabBarStyle: { display: "none" },
       }}
     >
       <Tabs.Screen name="index" />
@@ -19,6 +18,7 @@ export default function Layout() {
       <Tabs.Screen name="ceramics" />
       <Tabs.Screen name="accessories" />
       <Tabs.Screen name="checkout" />
+      <Tabs.Screen name="payment" />
     </Tabs>
   );
 }

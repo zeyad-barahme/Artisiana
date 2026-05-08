@@ -1,9 +1,8 @@
 import Feather from "@expo/vector-icons/Feather";
-import React from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 type CartItemProps = {
-  image: string; // 🔥 رابط من Firebase
+  image: string;
   title: string;
   price: number;
   quantity: number;
