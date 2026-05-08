@@ -12,6 +12,8 @@ import { useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { useRouter, type Href } from "expo-router";
 import { createUserWithEmailAndPassword } from "firebase/auth";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 
 import { auth } from "@/firebase";
 import { createUserProfile } from "@/services/user-profile";
@@ -24,6 +26,19 @@ type SignupForm = {
   confirmPassword: string;
 };
 
+const signupSchema = z
+  .object({
+    name: z.string().min(1, "Name is required"),
+    email: z.string().min(1, "Email is required").email("Invalid email"),
+    phone: z.string().min(1, "Phone is required"),
+    password: z.string().min(6, "Minimum 6 characters"),
+    confirmPassword: z.string().min(1, "Confirm password"),
+  })
+  .refine((data) => data.confirmPassword === data.password, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
+
 export default function Signup() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
@@ -32,7 +47,6 @@ export default function Signup() {
     control,
     handleSubmit,
     formState: { errors },
-    watch,
     reset,
   } = useForm<SignupForm>({
     defaultValues: {
@@ -42,6 +56,7 @@ export default function Signup() {
       password: "",
       confirmPassword: "",
     },
+    resolver: zodResolver(signupSchema),
   });
 
   const onSubmit = async (data: SignupForm) => {
@@ -83,7 +98,6 @@ export default function Signup() {
           <Controller
             control={control}
             name="name"
-            rules={{ required: "Name is required" }}
             render={({ field: { onChange, value } }) => (
               <View style={styles.inputContainer}>
                 <TextInput
@@ -103,13 +117,6 @@ export default function Signup() {
           <Controller
             control={control}
             name="email"
-            rules={{
-              required: "Email is required",
-              pattern: {
-                value: /^\S+@\S+\.\S+$/,
-                message: "Invalid email",
-              },
-            }}
             render={({ field: { onChange, value } }) => (
               <View style={styles.inputContainer}>
                 <TextInput
@@ -133,7 +140,6 @@ export default function Signup() {
           <Controller
             control={control}
             name="phone"
-            rules={{ required: "Phone is required" }}
             render={({ field: { onChange, value } }) => (
               <View style={styles.inputContainer}>
                 <TextInput
@@ -156,13 +162,6 @@ export default function Signup() {
               <Controller
                 control={control}
                 name="password"
-                rules={{
-                  required: "Password is required",
-                  minLength: {
-                    value: 6,
-                    message: "Minimum 6 characters",
-                  },
-                }}
                 render={({ field: { onChange, value } }) => (
                   <TextInput
                     placeholder="Password"
@@ -188,13 +187,6 @@ export default function Signup() {
           <Controller
             control={control}
             name="confirmPassword"
-            rules={{
-              required: "Confirm password",
-              validate: (value: string) => {
-                const password = watch("password") || "";
-                return value === password || "Passwords do not match";
-              },
-            }}
             render={({ field: { onChange, value } }) => (
               <View style={styles.inputContainer}>
                 <TextInput

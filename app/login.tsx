@@ -13,6 +13,8 @@ import { useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { useRouter, type Href } from "expo-router";
 import { signInWithEmailAndPassword } from "firebase/auth";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 
 import { auth } from "@/firebase";
 
@@ -20,6 +22,11 @@ type LoginForm = {
   email: string;
   password: string;
 };
+
+const loginSchema = z.object({
+  email: z.string().min(1, "Email is required").email("Invalid email"),
+  password: z.string().min(1, "Password is required"),
+});
 
 export default function Login() {
   const router = useRouter();
@@ -31,6 +38,7 @@ export default function Login() {
     formState: { errors },
   } = useForm<LoginForm>({
     defaultValues: { email: "", password: "" },
+    resolver: zodResolver(loginSchema),
   });
 
   const onSubmit = async (data: LoginForm) => {
@@ -69,7 +77,6 @@ export default function Login() {
         <Controller
           control={control}
           name="email"
-          rules={{ required: "Email is required" }}
           render={({ field: { onChange, value } }) => (
             <View style={styles.inputContainer}>
               <TextInput
@@ -89,7 +96,6 @@ export default function Login() {
         <Controller
           control={control}
           name="password"
-          rules={{ required: "Password is required" }}
           render={({ field: { onChange, value } }) => (
             <View style={styles.inputContainer}>
               <View style={styles.passwordBox}>

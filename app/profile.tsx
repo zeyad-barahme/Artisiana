@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
   Image,
+  Alert,
 } from "react-native";
 import { useEffect, useState } from "react";
 import { useRouter, type Href } from "expo-router";
@@ -13,7 +14,7 @@ import * as ImagePicker from "expo-image-picker";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 
 import { auth } from "@/firebase";
-import { uploadAvatar } from "@/services/storage";
+import { getLocalAvatarUri, setLocalAvatarUri } from "@/services/profile-avatar-local";
 import { getUserProfile, updateUserProfile, type UserProfile } from "@/services/user-profile";
 
 export default function Profile() {
@@ -36,36 +37,65 @@ export default function Profile() {
         imageUrl: null,
       };
       const resolved = profile ?? fallback;
+      const localAvatarUri = await getLocalAvatarUri(firebaseUser.uid);
       setUser(resolved);
-      setImage(resolved.imageUrl ?? null);
+      setImage(localAvatarUri ?? resolved.imageUrl ?? null);
     });
     return () => unsub();
   }, []);
 
-  // 📸 اختيار صورة
-  const pickImage = async () => {
+  const handleImageAsset = async (asset: ImagePicker.ImagePickerAsset) => {
     if (!user) return;
+    const uri = asset.uri;
+    setImage(uri);
 
-    let result = await ImagePicker.launchImageLibraryAsync({
+    try {
+      await setLocalAvatarUri(user.uid, uri);
+      await updateUserProfile(user.uid, { imageUrl: uri });
+      setUser({ ...user, imageUrl: uri });
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
+  const pickFromGallery = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert("Permission needed", "Please allow gallery access to choose a profile photo.");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       quality: 1,
     });
-
-    if (!result.canceled) {
-      const asset = result.assets?.[0];
-      if (!asset) return;
-      const uri = asset.uri;
-      setImage(uri);
-
-      try {
-        const url = await uploadAvatar({ uid: user.uid, uri });
-        await updateUserProfile(user.uid, { imageUrl: url });
-        setUser({ ...user, imageUrl: url });
-        setImage(url);
-      } catch (e) {
-        console.log(e);
-      }
+    if (!result.canceled && result.assets?.[0]) {
+      await handleImageAsset(result.assets[0]);
     }
+  };
+
+  const pickFromCamera = async () => {
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert("Permission needed", "Please allow camera access to take a profile photo.");
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      cameraType: ImagePicker.CameraType.front,
+      quality: 1,
+    });
+    if (!result.canceled && result.assets?.[0]) {
+      await handleImageAsset(result.assets[0]);
+    }
+  };
+
+  const onPressAvatar = () => {
+    Alert.alert("Profile photo", "Choose image source", [
+      { text: "Camera", onPress: pickFromCamera },
+      { text: "Gallery", onPress: pickFromGallery },
+      { text: "Cancel", style: "cancel" },
+    ]);
   };
 
   if (!user) {
@@ -88,7 +118,7 @@ export default function Profile() {
         {/* Profile */}
         <View style={styles.profileBox}>
           
-          <TouchableOpacity onPress={pickImage}>
+          <TouchableOpacity onPress={onPressAvatar}>
             {image ? (
               <Image source={{ uri: image }} style={styles.avatarImg} />
             ) : (
@@ -121,15 +151,6 @@ export default function Profile() {
         </TouchableOpacity>
 
       </ScrollView>
-
-      {/* Navbar */}
-      <View style={styles.navbar}>
-        <Text style={styles.navItem}>🏠</Text>
-        <Text style={styles.navItem}>⬛</Text>
-        <Text style={styles.navActive}>👤</Text>
-        <Text style={styles.navItem}>🔔</Text>
-        <Text style={styles.navItem}>🛒</Text>
-      </View>
 
     </SafeAreaView>
   );
@@ -231,17 +252,4 @@ const styles = StyleSheet.create({
 
   logoutText: { color: "#fff" },
 
-  navbar: {
-    position: "absolute",
-    bottom: 0,
-    width: "100%",
-    flexDirection: "row",
-    justifyContent: "space-around",
-    backgroundColor: "#fff",
-    padding: 10,
-  },
-
-  navItem: { fontSize: 20, color: "#999" },
-
-  navActive: { fontSize: 20, color: "#F47C4C" },
 });
