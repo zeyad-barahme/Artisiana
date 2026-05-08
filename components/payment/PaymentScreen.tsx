@@ -1,8 +1,6 @@
 import { auth } from "@/api/firebase";
 import { useCart } from "@/hooks/useCart";
-import {
-  createCheckoutOrder
-} from "@/services/orders/checkoutOrder.service";
+import { createCheckoutOrder } from "@/services/orders/checkoutOrder.service";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { Alert, StyleSheet, View } from "react-native";
@@ -11,6 +9,11 @@ import CheckoutHeader from "../checkout/CheckoutHeader";
 import { CheckoutProgress } from "../checkout/CheckoutProgress";
 import PaymentForm from "./PaymentForm";
 import PaymentSummary from "./PaymentSummary";
+import {
+  cleanPaymentDetails,
+  formatExpireDate,
+  validatePaymentDetails,
+} from "./paymentValidation";
 
 export default function PaymentScreen() {
   const { total, cartItems } = useCart();
@@ -33,15 +36,24 @@ export default function PaymentScreen() {
       return;
     }
 
-    if (
-      cardNumber.trim() === "" ||
-      cardholderName.trim() === "" ||
-      expireDate.trim() === "" ||
-      cvc.trim() === ""
-    ) {
-      Alert.alert("Missing Information", "Please fill in all payment fields.");
+    const validation = validatePaymentDetails({
+      cardNumber,
+      cardholderName,
+      expireDate,
+      cvc,
+    });
+
+    if (!validation.isValid) {
+      Alert.alert(validation.title, validation.message);
       return;
     }
+
+    const cleanedPayment = cleanPaymentDetails({
+      cardNumber,
+      cardholderName,
+      expireDate,
+      cvc,
+    });
 
     if (!fullName || !phoneNumber || !address || !city) {
       Alert.alert(
@@ -67,9 +79,6 @@ export default function PaymentScreen() {
         image: item.image ?? "",
       }));
 
-      const cleanCardNumber = cardNumber.replace(/\s/g, "");
-      const cardLast4 = cleanCardNumber.slice(-4);
-
       await createCheckoutOrder({
         total,
         items: orderItems,
@@ -80,16 +89,17 @@ export default function PaymentScreen() {
           city,
         },
         paymentInfo: {
-          cardLast4,
-          cardholderName,
-          expireDate,
+          cardLast4: cleanedPayment.cardLast4,
+          cardholderName: cleanedPayment.cardholderName,
+          expireDate: cleanedPayment.expireDate,
         },
         userId: auth.currentUser?.uid ?? null,
       });
 
-      //await clearCartItems();
+      // مؤقتًا للتجربة لا نحذف عناصر الكارت
+      // await clearCartItems();
 
-      router.push("/success");
+      router.replace("/success");
     } catch (error) {
       console.error("Failed to save order:", error);
 
@@ -118,7 +128,7 @@ export default function PaymentScreen() {
           cvc={cvc}
           onCardNumberChange={setCardNumber}
           onCardholderNameChange={setCardholderName}
-          onExpireDateChange={setExpireDate}
+          onExpireDateChange={(text) => setExpireDate(formatExpireDate(text))}
           onCvcChange={setCvc}
         />
 

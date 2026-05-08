@@ -16,7 +16,7 @@ export default function SuccessScreen() {
 
   return (
     <View style={styles.container}>
-      <CheckoutHeader backTo="/payment" />
+      <CheckoutHeader backTo="/cart" />
 
       <CheckoutProgress step={3} />
 
@@ -61,17 +61,17 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     paddingHorizontal: 24,
-    marginTop: 45,
+    marginTop: 55,
   },
 
   checkCircle: {
-    width: 110,
-    height: 110,
-    borderRadius: 55,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
     backgroundColor: "#A8F29A",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 22,
+    marginBottom: 24,
   },
 
   title: {
@@ -79,7 +79,7 @@ const styles = StyleSheet.create({
     color: "#000000",
     fontFamily: "Roboto_400Regular",
     fontWeight: "400",
-    marginBottom: 34,
+    marginBottom: 42,
   },
 
   message: {
@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
   },
 
   totalSection: {
-    marginTop: 42,
+    marginTop: 65,
     alignItems: "center",
   },
 
@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
     color: "rgba(0,0,0,0.7)",
     fontFamily: "Roboto_400Regular",
     fontWeight: "400",
-    marginBottom: 14,
+    marginBottom: 18,
   },
 
   totalAmount: {
@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
   },
 
   buttonContainer: {
-    marginTop: 45,
+    marginTop: 90,
     alignItems: "center",
   },
 });

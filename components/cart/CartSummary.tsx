@@ -12,7 +12,14 @@ export default function CartSummary({ total }: any) {
 
       <TouchableOpacity
         style={styles.checkoutBtn}
-        onPress={() => router.push("/checkout")}
+        onPress={() =>
+          router.push({
+            pathname: "/checkout",
+            params: {
+              reset: Date.now().toString(),
+            },
+          } as any)
+        }
       >
         <Text style={styles.checkoutText}>Checkout</Text>
       </TouchableOpacity>

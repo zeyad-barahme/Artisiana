@@ -1,44 +1,62 @@
-import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useEffect, useState } from "react";
 import { Alert, StyleSheet, View } from "react-native";
 import CheckoutButton from "./CheckoutButton";
 import CheckoutHeader from "./CheckoutHeader";
 import CheckoutInput from "./CheckoutInput";
 import { CheckoutProgress } from "./CheckoutProgress";
+import {
+  cleanCheckoutDetails,
+  validateCheckoutDetails,
+} from "./checkoutValidation";
 
 export default function CheckoutDetails() {
   const router = useRouter();
+  const params = useLocalSearchParams();
 
   const [fullName, setFullName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [address, setAddress] = useState("");
   const [city, setCity] = useState("");
 
+  useEffect(() => {
+    if (params.reset) {
+      setFullName("");
+      setPhoneNumber("");
+      setAddress("");
+      setCity("");
+    }
+  }, [params.reset]);
+
   const handleSubmit = () => {
-    if (
-      fullName.trim() === "" ||
-      phoneNumber.trim() === "" ||
-      address.trim() === "" ||
-      city.trim() === ""
-    ) {
-      Alert.alert("Missing Information", "Please fill in all fields.");
+    const validation = validateCheckoutDetails({
+      fullName,
+      phoneNumber,
+      address,
+      city,
+    });
+
+    if (!validation.isValid) {
+      Alert.alert(validation.title, validation.message);
       return;
     }
 
+    const cleanedDetails = cleanCheckoutDetails({
+      fullName,
+      phoneNumber,
+      address,
+      city,
+    });
+
     router.push({
       pathname: "/payment",
-      params: {
-        fullName,
-        phoneNumber,
-        address,
-        city,
-      },
+      params: cleanedDetails,
     } as any);
   };
 
   return (
     <View style={styles.container}>
-      <CheckoutHeader />
+      <CheckoutHeader backTo="/cart" />
 
       <CheckoutProgress step={1} />
 
