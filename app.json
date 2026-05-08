@@ -39,11 +39,7 @@
           }
         }
       ],
-      "expo-font",
-      [
-        "@stripe/stripe-react-native",
-        {}
-      ]
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true,
