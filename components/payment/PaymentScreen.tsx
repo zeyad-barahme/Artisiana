@@ -1,8 +1,7 @@
 import { auth } from "@/api/firebase";
 import { useCart } from "@/hooks/useCart";
 import {
-  clearCartItems,
-  createCheckoutOrder,
+  createCheckoutOrder
 } from "@/services/orders/checkoutOrder.service";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
@@ -88,7 +87,7 @@ export default function PaymentScreen() {
         userId: auth.currentUser?.uid ?? null,
       });
 
-      await clearCartItems();
+      //await clearCartItems();
 
       router.push("/success");
     } catch (error) {

@@ -1,9 +1,8 @@
 import {
   collection,
-  deleteDoc,
   doc,
   onSnapshot,
-  updateDoc,
+  updateDoc
 } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { db } from "../api/firebase";
@@ -80,9 +79,9 @@ export function useCart() {
     });
   };
 
-  const deleteItem = async (id: string) => {
-    await deleteDoc(doc(db, "cart", id));
-  };
+  //const deleteItem = async (id: string) => {
+  //await deleteDoc(doc(db, "cart", id));
+  //};
 
   return {
     cartItems,
@@ -92,6 +91,6 @@ export function useCart() {
     setSearch,
     increaseQuantity,
     decreaseQuantity,
-    deleteItem,
+    //deleteItem,
   };
 }
