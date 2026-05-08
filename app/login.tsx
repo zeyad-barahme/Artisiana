@@ -45,7 +45,7 @@ export default function Login() {
     try {
       await signInWithEmailAndPassword(auth, data.email.trim(), data.password);
       Alert.alert("Success", "Login successful 🎉");
-      router.push("/home" as Href); // 👉 يوديه للصفحة الجديدة
+      router.push("/discover" as Href);
 
     } catch (e) {
       console.log(e);
