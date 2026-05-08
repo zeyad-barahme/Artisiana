@@ -25,7 +25,15 @@ export default function CheckoutDetails() {
       return;
     }
 
-    router.push("/payment");
+    router.push({
+      pathname: "/payment",
+      params: {
+        fullName,
+        phoneNumber,
+        address,
+        city,
+      },
+    } as any);
   };
 
   return (

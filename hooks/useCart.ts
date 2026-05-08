@@ -13,7 +13,17 @@ type CartItem = {
   title: string;
   price: number;
   quantity: number;
+  image: string;
 };
+
+function toNumber(value: unknown, fallback = 0) {
+  const numberValue =
+    typeof value === "string"
+      ? Number(value.replace(/[^0-9.]/g, ""))
+      : Number(value);
+
+  return Number.isFinite(numberValue) ? numberValue : fallback;
+}
 
 export function useCart() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -21,10 +31,17 @@ export function useCart() {
 
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, "cart"), (snapshot) => {
-      const items = snapshot.docs.map((docItem) => ({
-        id: docItem.id,
-        ...(docItem.data() as Omit<CartItem, "id">),
-      }));
+      const items = snapshot.docs.map((docItem) => {
+        const data = docItem.data();
+
+        return {
+          id: docItem.id,
+          title: String(data.title ?? ""),
+          price: toNumber(data.price, 0),
+          quantity: toNumber(data.quantity, 1),
+          image: String(data.image ?? ""),
+        };
+      });
 
       setCartItems(items);
     });
