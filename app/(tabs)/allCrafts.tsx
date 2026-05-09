@@ -1,105 +1,85 @@
 import { Rancho_400Regular, useFonts } from "@expo-google-fonts/rancho";
 import { useRouter } from "expo-router";
-import { useState } from "react";
-import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
-import { Appbar } from "react-native-paper";
+import { useState, useEffect } from "react";
+import { Image, ScrollView, StyleSheet, Text, View, ActivityIndicator } from "react-native";
+import { collection, query, where, getDocs } from "firebase/firestore"; 
+import { db } from "../../api/firebase"; 
 import AppBar from '../../components/layout/AppBar';
 import ProductCard from "../../components/ProductCard1w";
 import BottomNavBar from '../../components/layout/BottomNavBar';
-export default function Home() {
+
+const localImages: { [key: string]: any } = {
+  "a": require("../../assets/images/A1/a.webp"),
+  "b": require("../../assets/images/A1/b.jpg"),
+  "c": require("../../assets/images/A1/c.png"),
+  "d": require("../../assets/images/A1/d.jpg"),
+  "e": require("../../assets/images/A1/e.jpg"),
+  "h": require("../../assets/images/A1/f.jpg"),
+};
+
+export default function AllCrafts() {
   const router = useRouter();
+  const [fontsLoaded] = useFonts({ Rancho_400Regular });
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const [fontsLoaded] = useFonts({
-    Rancho_400Regular,
-  });
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+     
+        const q = query(collection(db, "products"), where("category", "==", "All Crafts"));
+        
+        const querySnapshot = await getDocs(q);
+        const items = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        setProducts(items);
+      } catch (error) {
+        console.error("Error fetching products: ", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProducts();
+  }, []);
 
-  const [showNav, setShowNav] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
-
-  if (!fontsLoaded) return null;
+  if (!fontsLoaded || loading) {
+    return <ActivityIndicator size="large" color="#FF5E22" style={{ flex: 1 }} />;
+  }
 
   return (
     <View style={{ flex: 1 }}>
       <ScrollView
         style={styles.container}
         contentContainerStyle={{ paddingBottom: 100 }}
-        scrollEventThrottle={8}
-        onScroll={(event) => {
-          const currentY = event.nativeEvent.contentOffset.y;
-          const diff = currentY - lastScrollY;
-
-          if (diff > 5) setShowNav(false);
-          else if (diff < -5) setShowNav(true);
-
-          setLastScrollY(currentY);
-        }}
       >
         <AppBar />
-
         <Image
           source={require("../../assets/images/A1/08bfaa47c6dec68aae046dcf5e766154b122ef7e.png")}
           style={styles.image}
         />
-
         <Text style={styles.title}>All Crafts</Text>
 
         <View style={styles.productsContainer}>
-          <ProductCard
-            title="Woven Basket Set"
-            desc="Woven Wall Hanging Basket Set"
-            price={35}
-            image={require("../../assets/images/A1/a.webp")}
-            onPressCard={() => router.push("/temp")}
-            onAdd={() => router.push("/temp")}
-          />
-
-          <ProductCard
-            title="Macrame Wall Hanging"
-            desc="Boho Home Decor"
-            price={8}
-            image={require("../../assets/images/A1/b.jpg")}
-            onPressCard={() => router.push("/temp")}
-            onAdd={() => router.push("/temp")}
-          />
-
-          <ProductCard
-            title="Kauna Long U Bag"
-            desc="Eco Friendly Handmade Kauna Long U Bag"
-            price={10}
-            image={require("../../assets/images/A1/c.png")}
-            onPressCard={() => router.push("/temp")}
-            onAdd={() => router.push("/temp")}
-          />
-          <ProductCard
-            title="crylic round miniature"
-            desc="crylic round 4 inch hand painted miniature with easel"
-            price={5}
-            image={require("../../assets/images/A1/d.jpg")}
-            onPressCard={() => router.push("/temp")}
-            onAdd={() => router.push("/temp")}
-          />
-          <ProductCard
-            title="painted kettle"
-            desc="Hand painted kettle art, table decor, housewarming gift"
-            price={18}
-            image={require("../../assets/images/A1/e.jpg")}
-            onPressCard={() => router.push("/temp")}
-            onAdd={() => router.push("/temp")}
-          />
-          <ProductCard
-            title="Wooden Flower"
-            desc="Handmade Wooden Flower: Set Of 2 | Gift For Couples | Anniversary Gift"
-            price={7}
-            image={require("../../assets/images/A1/f.jpg")}
-            onPressCard={() => router.push("/temp")}
-            onAdd={() => router.push("/temp")}
-          />
+          {products.map((item) => (
+            <ProductCard
+              key={item.id}
+              title={item.title}
+              desc={item.desc}
+              price={item.price}
+              image={localImages[item.image] || require("../../assets/images/A1/a.webp")}
+              
+              onPressCard={() => router.push({
+                pathname: "/productDetails",
+                params: { productId: item.id }
+              })}
+              onAdd={() => console.log("Added to cart:", item.id)}
+            />
+          ))}
         </View>
       </ScrollView>
-
-      
-         <BottomNavBar />
-      
+      <BottomNavBar />
     </View>
   );
 }
@@ -119,16 +99,4 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 10,
   },
-  bottomNav: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    height: 55,
-    position: "absolute",
-    bottom: 0,
-    width: "100%",
-  },
-  centerLogo: { padding: 5 },
-  logoBottom: { width: 40, height: 40, borderRadius: 20 },
 });
