@@ -1,3 +1,8 @@
+import {
+  clearCheckoutDraft,
+  loadCheckoutDraft,
+  saveCheckoutDraft,
+} from "@/services/checkout/checkoutDraft.service";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { Alert, StyleSheet, TextInput, View } from "react-native";
@@ -25,13 +30,37 @@ export default function CheckoutDetails() {
   const cityRef = useRef<TextInput>(null);
 
   useEffect(() => {
-    if (params.reset) {
-      setFullName("");
-      setPhoneNumber("");
-      setAddress("");
-      setCity("");
-    }
+    const prepareCheckoutDetails = async () => {
+      if (params.reset) {
+        setFullName("");
+        setPhoneNumber("");
+        setAddress("");
+        setCity("");
+        await clearCheckoutDraft();
+        return;
+      }
+
+      const savedDraft = await loadCheckoutDraft();
+
+      if (savedDraft) {
+        setFullName(savedDraft.fullName);
+        setPhoneNumber(savedDraft.phoneNumber);
+        setAddress(savedDraft.address);
+        setCity(savedDraft.city);
+      }
+    };
+
+    prepareCheckoutDetails();
   }, [params.reset]);
+
+  useEffect(() => {
+    saveCheckoutDraft({
+      fullName,
+      phoneNumber,
+      address,
+      city,
+    });
+  }, [fullName, phoneNumber, address, city]);
 
   const focusInvalidInput = (title: string) => {
     if (fullName.trim() === "") {
