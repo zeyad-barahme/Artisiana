@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
-import { Alert, StyleSheet, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { Alert, StyleSheet, TextInput, View } from "react-native";
 import CheckoutButton from "./CheckoutButton";
 import CheckoutHeader from "./CheckoutHeader";
 import CheckoutInput from "./CheckoutInput";
@@ -19,6 +19,11 @@ export default function CheckoutDetails() {
   const [address, setAddress] = useState("");
   const [city, setCity] = useState("");
 
+  const fullNameRef = useRef<TextInput>(null);
+  const phoneNumberRef = useRef<TextInput>(null);
+  const addressRef = useRef<TextInput>(null);
+  const cityRef = useRef<TextInput>(null);
+
   useEffect(() => {
     if (params.reset) {
       setFullName("");
@@ -27,6 +32,50 @@ export default function CheckoutDetails() {
       setCity("");
     }
   }, [params.reset]);
+
+  const focusInvalidInput = (title: string) => {
+    if (fullName.trim() === "") {
+      fullNameRef.current?.focus();
+      return;
+    }
+
+    if (phoneNumber.trim() === "") {
+      phoneNumberRef.current?.focus();
+      return;
+    }
+
+    if (address.trim() === "") {
+      addressRef.current?.focus();
+      return;
+    }
+
+    if (city.trim() === "") {
+      cityRef.current?.focus();
+      return;
+    }
+
+    if (title.includes("Full Name")) {
+      fullNameRef.current?.focus();
+      return;
+    }
+
+    if (title.includes("Phone Number")) {
+      phoneNumberRef.current?.focus();
+      return;
+    }
+
+    if (title.includes("Address")) {
+      addressRef.current?.focus();
+      return;
+    }
+
+    if (title.includes("City")) {
+      cityRef.current?.focus();
+      return;
+    }
+
+    fullNameRef.current?.focus();
+  };
 
   const handleSubmit = () => {
     const validation = validateCheckoutDetails({
@@ -38,6 +87,7 @@ export default function CheckoutDetails() {
 
     if (!validation.isValid) {
       Alert.alert(validation.title, validation.message);
+      focusInvalidInput(validation.title);
       return;
     }
 
@@ -62,6 +112,7 @@ export default function CheckoutDetails() {
 
       <View style={styles.form}>
         <CheckoutInput
+          ref={fullNameRef}
           label="Full Name"
           placeholder="Enter full name"
           value={fullName}
@@ -69,6 +120,7 @@ export default function CheckoutDetails() {
         />
 
         <CheckoutInput
+          ref={phoneNumberRef}
           label="Phone Number"
           placeholder="Enter phone number"
           value={phoneNumber}
@@ -77,6 +129,7 @@ export default function CheckoutDetails() {
         />
 
         <CheckoutInput
+          ref={addressRef}
           label="Address"
           placeholder="Enter address"
           value={address}
@@ -84,6 +137,7 @@ export default function CheckoutDetails() {
         />
 
         <CheckoutInput
+          ref={cityRef}
           label="City"
           placeholder="Enter city"
           value={city}

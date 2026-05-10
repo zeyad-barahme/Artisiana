@@ -1,4 +1,5 @@
-import { StyleSheet, View } from "react-native";
+import type { RefObject } from "react";
+import { StyleSheet, TextInput, View } from "react-native";
 import CheckoutInput from "../checkout/CheckoutInput";
 
 type PaymentFormProps = {
@@ -10,6 +11,10 @@ type PaymentFormProps = {
   onCardholderNameChange: (text: string) => void;
   onExpireDateChange: (text: string) => void;
   onCvcChange: (text: string) => void;
+  cardNumberRef: RefObject<TextInput | null>;
+  cardholderNameRef: RefObject<TextInput | null>;
+  expireDateRef: RefObject<TextInput | null>;
+  cvcRef: RefObject<TextInput | null>;
 };
 
 export default function PaymentForm({
@@ -21,10 +26,15 @@ export default function PaymentForm({
   onCardholderNameChange,
   onExpireDateChange,
   onCvcChange,
+  cardNumberRef,
+  cardholderNameRef,
+  expireDateRef,
+  cvcRef,
 }: PaymentFormProps) {
   return (
     <View style={styles.container}>
       <CheckoutInput
+        ref={cardNumberRef}
         label="Card Number"
         placeholder="Enter card number"
         value={cardNumber}
@@ -33,6 +43,7 @@ export default function PaymentForm({
       />
 
       <CheckoutInput
+        ref={cardholderNameRef}
         label="Cardholder Name"
         placeholder="Enter cardholder name"
         value={cardholderName}
@@ -42,6 +53,7 @@ export default function PaymentForm({
       <View style={styles.row}>
         <View style={styles.smallInput}>
           <CheckoutInput
+            ref={expireDateRef}
             label="Expire date"
             placeholder="MM / YY"
             value={expireDate}
@@ -52,6 +64,7 @@ export default function PaymentForm({
 
         <View style={styles.smallInput}>
           <CheckoutInput
+            ref={cvcRef}
             label="CVC"
             placeholder="Enter CVC"
             value={cvc}

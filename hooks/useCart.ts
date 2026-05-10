@@ -5,7 +5,7 @@ import {
   onSnapshot,
   updateDoc,
 } from "firebase/firestore";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { db } from "../api/firebase";
 
 type CartItem = {
@@ -49,40 +49,47 @@ export function useCart() {
     return () => unsubscribe();
   }, []);
 
-  const filteredItems = cartItems.filter((item) =>
-    item.title.toLowerCase().includes(search.toLowerCase()),
+  const filteredItems = useMemo(() => {
+    return cartItems.filter((item) =>
+      item.title.toLowerCase().includes(search.toLowerCase()),
+    );
+  }, [cartItems, search]);
+
+  const total = useMemo(() => {
+    return cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  }, [cartItems]);
+
+  const increaseQuantity = useCallback(
+    async (id: string) => {
+      const item = cartItems.find((i) => i.id === id);
+      if (!item) return;
+
+      const ref = doc(db, "cart", id);
+
+      await updateDoc(ref, {
+        quantity: item.quantity + 1,
+      });
+    },
+    [cartItems],
   );
 
-  const total = cartItems.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0,
+  const decreaseQuantity = useCallback(
+    async (id: string) => {
+      const item = cartItems.find((i) => i.id === id);
+      if (!item || item.quantity <= 1) return;
+
+      const ref = doc(db, "cart", id);
+
+      await updateDoc(ref, {
+        quantity: item.quantity - 1,
+      });
+    },
+    [cartItems],
   );
 
-  const increaseQuantity = async (id: string) => {
-    const item = cartItems.find((i) => i.id === id);
-    if (!item) return;
-
-    const ref = doc(db, "cart", id);
-
-    await updateDoc(ref, {
-      quantity: item.quantity + 1,
-    });
-  };
-
-  const decreaseQuantity = async (id: string) => {
-    const item = cartItems.find((i) => i.id === id);
-    if (!item || item.quantity <= 1) return;
-
-    const ref = doc(db, "cart", id);
-
-    await updateDoc(ref, {
-      quantity: item.quantity - 1,
-    });
-  };
-
-  const deleteItem = async (id: string) => {
+  const deleteItem = useCallback(async (id: string) => {
     await deleteDoc(doc(db, "cart", id));
-  };
+  }, []);
 
   return {
     cartItems,

@@ -36,7 +36,7 @@ export default function SuccessScreen() {
 
         <View style={styles.totalSection}>
           <Text style={styles.totalLabel}>Total Payment</Text>
-          <Text style={styles.totalAmount}>${total}</Text>
+          <Text style={styles.totalAmount}>${total.toFixed(2)}</Text>
         </View>
 
         <View style={styles.buttonContainer}>

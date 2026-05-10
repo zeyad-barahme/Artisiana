@@ -7,7 +7,7 @@ export default function CartSummary({ total }: any) {
     <View style={styles.container}>
       <View style={styles.totalContainer}>
         <Text style={styles.totalText}>Total :</Text>
-        <Text style={styles.totalPrice}>${total}</Text>
+        <Text style={styles.totalPrice}>${total.toFixed(2)}</Text>
       </View>
 
       <TouchableOpacity

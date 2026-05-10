@@ -8,7 +8,7 @@ export default function PaymentSummary({ total }: PaymentSummaryProps) {
   return (
     <View style={styles.container}>
       <Text style={styles.label}>For Payment :</Text>
-      <Text style={styles.amount}>${total}</Text>
+      <Text style={styles.amount}>${total.toFixed(2)}</Text>
     </View>
   );
 }

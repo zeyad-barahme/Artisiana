@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 
 type CheckoutInputProps = {
@@ -8,28 +9,30 @@ type CheckoutInputProps = {
   keyboardType?: "default" | "phone-pad" | "numeric" | "email-address";
 };
 
-export default function CheckoutInput({
-  label,
-  placeholder,
-  value,
-  onChangeText,
-  keyboardType = "default",
-}: CheckoutInputProps) {
-  return (
-    <View style={styles.container}>
-      <Text style={styles.label}>{label}</Text>
+const CheckoutInput = forwardRef<TextInput, CheckoutInputProps>(
+  (
+    { label, placeholder, value, onChangeText, keyboardType = "default" },
+    ref,
+  ) => {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.label}>{label}</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder={placeholder}
-        placeholderTextColor="rgba(0,0,0,0.45)"
-        value={value}
-        onChangeText={onChangeText}
-        keyboardType={keyboardType}
-      />
-    </View>
-  );
-}
+        <TextInput
+          ref={ref}
+          style={styles.input}
+          placeholder={placeholder}
+          placeholderTextColor="rgba(0,0,0,0.45)"
+          value={value}
+          onChangeText={onChangeText}
+          keyboardType={keyboardType}
+        />
+      </View>
+    );
+  },
+);
+
+export default CheckoutInput;
 
 const styles = StyleSheet.create({
   container: {
