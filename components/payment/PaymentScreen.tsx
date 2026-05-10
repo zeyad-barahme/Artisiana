@@ -158,11 +158,6 @@ export default function PaymentScreen() {
 
       // await clearCartItems();
 
-      setCardNumber("");
-      setCardholderName("");
-      setExpireDate("");
-      setCvc("");
-
       router.replace("/success");
     } catch (error) {
       console.error("Failed to save order:", error);
