@@ -2,7 +2,7 @@ import { auth } from "@/api/firebase";
 import { useCart } from "@/hooks/useCart";
 import { createCheckoutOrder } from "@/services/orders/checkoutOrder.service";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Alert, StyleSheet, TextInput, View } from "react-native";
 import CheckoutButton from "../checkout/CheckoutButton";
 import CheckoutHeader from "../checkout/CheckoutHeader";
@@ -35,6 +35,16 @@ export default function PaymentScreen() {
   const phoneNumber = String(params.phoneNumber ?? "");
   const address = String(params.address ?? "");
   const city = String(params.city ?? "");
+  const paymentReset = String(params.paymentReset ?? "");
+
+  useEffect(() => {
+    if (paymentReset) {
+      setCardNumber("");
+      setCardholderName("");
+      setExpireDate("");
+      setCvc("");
+    }
+  }, [paymentReset]);
 
   const focusInvalidPaymentInput = (title: string) => {
     if (cardNumber.trim() === "") {
@@ -147,6 +157,11 @@ export default function PaymentScreen() {
       });
 
       // await clearCartItems();
+
+      setCardNumber("");
+      setCardholderName("");
+      setExpireDate("");
+      setCvc("");
 
       router.replace("/success");
     } catch (error) {

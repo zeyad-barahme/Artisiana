@@ -129,7 +129,13 @@ export default function CheckoutDetails() {
 
     router.push({
       pathname: "/payment",
-      params: cleanedDetails,
+      params: {
+        fullName: cleanedDetails.fullName,
+        phoneNumber: cleanedDetails.phoneNumber,
+        address: cleanedDetails.address,
+        city: cleanedDetails.city,
+        paymentReset: Date.now().toString(),
+      },
     } as any);
   };
 
