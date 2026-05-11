@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { StyleSheet, Text } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import CartList from "../../components/cart/CartList";
 import CartSummary from "../../components/cart/CartSummary";
@@ -7,13 +7,13 @@ import EmptyCart from "../../components/cart/EmptyCart";
 import AppBar from "../../components/layout/AppBar";
 import BottomNavBar from "../../components/layout/BottomNavBar";
 import { useCart } from "../../hooks/useCart";
+
 export default function CartScreen() {
   const router = useRouter();
 
   const {
     filteredItems,
     total,
-    setSearch,
     increaseQuantity,
     decreaseQuantity,
     deleteItem,
@@ -21,24 +21,28 @@ export default function CartScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
-      <AppBar />
+      <View style={styles.headerWrapper}>
+        <AppBar />
+      </View>
 
-      <Text style={styles.title}>Your Cart</Text>
+      <View style={styles.content}>
+        <Text style={styles.title}>Your Cart</Text>
 
-      {filteredItems.length === 0 ? (
-        <EmptyCart />
-      ) : (
-        <>
-          <CartList
-            items={filteredItems}
-            onIncrease={increaseQuantity}
-            onDecrease={decreaseQuantity}
-            onDelete={deleteItem}
-          />
+        {filteredItems.length === 0 ? (
+          <EmptyCart />
+        ) : (
+          <>
+            <CartList
+              items={filteredItems}
+              onIncrease={increaseQuantity}
+              onDecrease={decreaseQuantity}
+              onDelete={deleteItem}
+            />
 
-          <CartSummary total={total} />
-        </>
-      )}
+            <CartSummary total={total} />
+          </>
+        )}
+      </View>
 
       <BottomNavBar />
     </SafeAreaView>
@@ -48,8 +52,19 @@ export default function CartScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#FFF7F3",
+  },
+
+  headerWrapper: {
+    paddingHorizontal: 5,
     paddingTop: 10,
+    paddingBottom: 10,
+    backgroundColor: "#FFFFFF",
+  },
+
+  content: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
   },
 
   title: {
