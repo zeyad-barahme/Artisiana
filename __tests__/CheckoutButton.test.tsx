@@ -1,6 +1,6 @@
+import CheckoutButton from "@/components/shared/CheckoutButton";
 import { describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render } from "@testing-library/react-native";
-import CheckoutButton from "../components/checkout/CheckoutButton";
 
 describe("CheckoutButton", () => {
   it("renders the button title", () => {

@@ -1,6 +1,6 @@
 import type { RefObject } from "react";
 import { StyleSheet, TextInput, View } from "react-native";
-import CheckoutInput from "../checkout/CheckoutInput";
+import CheckoutInput from "../shared/CheckoutInput";
 
 type PaymentFormProps = {
   cardNumber: string;

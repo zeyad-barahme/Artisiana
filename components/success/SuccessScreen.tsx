@@ -2,9 +2,9 @@ import { useCart } from "@/hooks/useCart";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
-import CheckoutButton from "../checkout/CheckoutButton";
 import CheckoutHeader from "../checkout/CheckoutHeader";
-import { CheckoutProgress } from "../checkout/CheckoutProgress";
+import CheckoutButton from "../shared/CheckoutButton";
+import { CheckoutProgress } from "../shared/CheckoutProgress";
 
 export default function SuccessScreen() {
   const router = useRouter();

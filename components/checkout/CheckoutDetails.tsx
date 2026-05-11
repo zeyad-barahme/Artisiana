@@ -6,10 +6,10 @@ import {
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { Alert, StyleSheet, TextInput, View } from "react-native";
-import CheckoutButton from "./CheckoutButton";
+import CheckoutButton from "../shared/CheckoutButton";
+import CheckoutInput from "../shared/CheckoutInput";
+import { CheckoutProgress } from "../shared/CheckoutProgress";
 import CheckoutHeader from "./CheckoutHeader";
-import CheckoutInput from "./CheckoutInput";
-import { CheckoutProgress } from "./CheckoutProgress";
 import {
   cleanCheckoutDetails,
   validateCheckoutDetails,

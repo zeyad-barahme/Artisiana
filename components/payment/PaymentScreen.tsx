@@ -4,9 +4,9 @@ import { createCheckoutOrder } from "@/services/orders/checkoutOrder.service";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { Alert, StyleSheet, TextInput, View } from "react-native";
-import CheckoutButton from "../checkout/CheckoutButton";
 import CheckoutHeader from "../checkout/CheckoutHeader";
-import { CheckoutProgress } from "../checkout/CheckoutProgress";
+import CheckoutButton from "../shared/CheckoutButton";
+import { CheckoutProgress } from "../shared/CheckoutProgress";
 import PaymentForm from "./PaymentForm";
 import PaymentSummary from "./PaymentSummary";
 import {

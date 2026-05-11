@@ -5,7 +5,6 @@ type CheckoutProgressProps = {
 };
 
 export function CheckoutProgress({ step }: CheckoutProgressProps) {
-  // ✅ named export
   return (
     <View style={styles.container}>
       <View style={[styles.line, step >= 1 ? styles.activeLine : null]} />
