@@ -8,11 +8,20 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, type Href } from "expo-router";
+import { useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
 
 const { width, height } = Dimensions.get("window");
 
 export default function EntryGateScreen() {
   const router = useRouter();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      router.replace("/(tabs)/home" as Href);
+    }
+  }, [user]);
 
   return (
     <SafeAreaView style={styles.container}>
