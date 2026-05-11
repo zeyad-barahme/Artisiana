@@ -39,7 +39,7 @@ export function useCart() {
         return {
           id: docItem.id,
           title: String(data.title ?? ""),
-          price: toNumber(data.price, 0),
+          price: toNumber(data.price ?? data["price "], 0),
           quantity: toNumber(data.quantity, 1),
           image: String(data.image ?? ""),
         };
@@ -62,14 +62,16 @@ export function useCart() {
         await updateDoc(cartRef, {
           quantity: toNumber(cartSnap.data().quantity, 1) + 1,
         });
-      } else {
-        await setDoc(cartRef, {
-          title: product.title,
-          price: toNumber(product.price, 0),
-          image: String(product.image ?? ""),
-          quantity: 1,
-        });
+
+        return;
       }
+
+      await setDoc(cartRef, {
+        title: String(product.title ?? ""),
+        price: toNumber(product.price, 0),
+        image: String(product.image ?? ""),
+        quantity: 1,
+      });
     } catch (error) {
       console.error("Error adding to cart:", error);
     }
@@ -77,14 +79,14 @@ export function useCart() {
 
   const filteredItems = useMemo(() => {
     return cartItems.filter((item) =>
-      item.title.toLowerCase().includes(search.toLowerCase())
+      item.title.toLowerCase().includes(search.toLowerCase()),
     );
   }, [cartItems, search]);
 
   const total = useMemo(() => {
     return cartItems.reduce(
       (sum, item) => sum + item.price * item.quantity,
-      0
+      0,
     );
   }, [cartItems]);
 
@@ -104,7 +106,7 @@ export function useCart() {
         quantity: item.quantity + 1,
       });
     },
-    [cartItems]
+    [cartItems],
   );
 
   const decreaseQuantity = useCallback(
@@ -124,7 +126,7 @@ export function useCart() {
         quantity: item.quantity - 1,
       });
     },
-    [cartItems]
+    [cartItems],
   );
 
   const deleteItem = useCallback(async (id: string) => {
@@ -133,7 +135,7 @@ export function useCart() {
 
   const clearCart = useCallback(async () => {
     await Promise.all(
-      cartItems.map((item) => deleteDoc(doc(db, "cart", item.id)))
+      cartItems.map((item) => deleteDoc(doc(db, "cart", item.id))),
     );
   }, [cartItems]);
 
