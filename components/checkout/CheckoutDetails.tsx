@@ -4,38 +4,60 @@ import {
   saveCheckoutDraft,
 } from "@/services/checkout/checkoutDraft.service";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useRef, useState } from "react";
-import { Alert, StyleSheet, TextInput, View } from "react-native";
+import { useEffect } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { StyleSheet, View } from "react-native";
 import CheckoutButton from "../shared/CheckoutButton";
 import CheckoutInput from "../shared/CheckoutInput";
 import { CheckoutProgress } from "../shared/CheckoutProgress";
 import CheckoutHeader from "./CheckoutHeader";
 import {
   cleanCheckoutDetails,
-  validateCheckoutDetails,
+  validateAddressField,
+  validateCityField,
+  validateFullNameField,
+  validatePhoneNumberField,
 } from "./checkoutValidation";
+
+type CheckoutFormValues = {
+  fullName: string;
+  phoneNumber: string;
+  address: string;
+  city: string;
+};
 
 export default function CheckoutDetails() {
   const router = useRouter();
   const params = useLocalSearchParams();
 
-  const [fullName, setFullName] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [address, setAddress] = useState("");
-  const [city, setCity] = useState("");
+  const {
+    control,
+    handleSubmit,
+    watch,
+    reset,
+    formState: { errors },
+  } = useForm<CheckoutFormValues>({
+    mode: "onChange",
+    defaultValues: {
+      fullName: "",
+      phoneNumber: "",
+      address: "",
+      city: "",
+    },
+  });
 
-  const fullNameRef = useRef<TextInput>(null);
-  const phoneNumberRef = useRef<TextInput>(null);
-  const addressRef = useRef<TextInput>(null);
-  const cityRef = useRef<TextInput>(null);
+  const watchedValues = watch();
 
   useEffect(() => {
     const prepareCheckoutDetails = async () => {
       if (params.reset) {
-        setFullName("");
-        setPhoneNumber("");
-        setAddress("");
-        setCity("");
+        reset({
+          fullName: "",
+          phoneNumber: "",
+          address: "",
+          city: "",
+        });
+
         await clearCheckoutDraft();
         return;
       }
@@ -43,89 +65,34 @@ export default function CheckoutDetails() {
       const savedDraft = await loadCheckoutDraft();
 
       if (savedDraft) {
-        setFullName(savedDraft.fullName);
-        setPhoneNumber(savedDraft.phoneNumber);
-        setAddress(savedDraft.address);
-        setCity(savedDraft.city);
+        reset({
+          fullName: savedDraft.fullName,
+          phoneNumber: savedDraft.phoneNumber,
+          address: savedDraft.address,
+          city: savedDraft.city,
+        });
       }
     };
 
     prepareCheckoutDetails();
-  }, [params.reset]);
+  }, [params.reset, reset]);
 
   useEffect(() => {
     saveCheckoutDraft({
-      fullName,
-      phoneNumber,
-      address,
-      city,
+      fullName: watchedValues.fullName,
+      phoneNumber: watchedValues.phoneNumber,
+      address: watchedValues.address,
+      city: watchedValues.city,
     });
-  }, [fullName, phoneNumber, address, city]);
+  }, [
+    watchedValues.fullName,
+    watchedValues.phoneNumber,
+    watchedValues.address,
+    watchedValues.city,
+  ]);
 
-  const focusInvalidInput = (title: string) => {
-    if (fullName.trim() === "") {
-      fullNameRef.current?.focus();
-      return;
-    }
-
-    if (phoneNumber.trim() === "") {
-      phoneNumberRef.current?.focus();
-      return;
-    }
-
-    if (address.trim() === "") {
-      addressRef.current?.focus();
-      return;
-    }
-
-    if (city.trim() === "") {
-      cityRef.current?.focus();
-      return;
-    }
-
-    if (title.includes("Full Name")) {
-      fullNameRef.current?.focus();
-      return;
-    }
-
-    if (title.includes("Phone Number")) {
-      phoneNumberRef.current?.focus();
-      return;
-    }
-
-    if (title.includes("Address")) {
-      addressRef.current?.focus();
-      return;
-    }
-
-    if (title.includes("City")) {
-      cityRef.current?.focus();
-      return;
-    }
-
-    fullNameRef.current?.focus();
-  };
-
-  const handleSubmit = () => {
-    const validation = validateCheckoutDetails({
-      fullName,
-      phoneNumber,
-      address,
-      city,
-    });
-
-    if (!validation.isValid) {
-      Alert.alert(validation.title, validation.message);
-      focusInvalidInput(validation.title);
-      return;
-    }
-
-    const cleanedDetails = cleanCheckoutDetails({
-      fullName,
-      phoneNumber,
-      address,
-      city,
-    });
+  const onSubmit = (values: CheckoutFormValues) => {
+    const cleanedDetails = cleanCheckoutDetails(values);
 
     router.push({
       pathname: "/payment",
@@ -146,42 +113,78 @@ export default function CheckoutDetails() {
       <CheckoutProgress step={1} />
 
       <View style={styles.form}>
-        <CheckoutInput
-          ref={fullNameRef}
-          label="Full Name"
-          placeholder="Enter full name"
-          value={fullName}
-          onChangeText={setFullName}
+        <Controller
+          control={control}
+          name="fullName"
+          rules={{
+            validate: validateFullNameField,
+          }}
+          render={({ field: { value, onChange } }) => (
+            <CheckoutInput
+              label="Full Name"
+              placeholder="Enter full name"
+              value={value}
+              onChangeText={onChange}
+              errorMessage={errors.fullName?.message}
+            />
+          )}
         />
 
-        <CheckoutInput
-          ref={phoneNumberRef}
-          label="Phone Number"
-          placeholder="Enter phone number"
-          value={phoneNumber}
-          onChangeText={setPhoneNumber}
-          keyboardType="phone-pad"
+        <Controller
+          control={control}
+          name="phoneNumber"
+          rules={{
+            validate: validatePhoneNumberField,
+          }}
+          render={({ field: { value, onChange } }) => (
+            <CheckoutInput
+              label="Phone Number"
+              placeholder="Enter phone number"
+              value={value}
+              onChangeText={onChange}
+              keyboardType="phone-pad"
+              errorMessage={errors.phoneNumber?.message}
+            />
+          )}
         />
 
-        <CheckoutInput
-          ref={addressRef}
-          label="Address"
-          placeholder="Enter address"
-          value={address}
-          onChangeText={setAddress}
+        <Controller
+          control={control}
+          name="address"
+          rules={{
+            validate: validateAddressField,
+          }}
+          render={({ field: { value, onChange } }) => (
+            <CheckoutInput
+              label="Address"
+              placeholder="Enter address"
+              value={value}
+              onChangeText={onChange}
+              errorMessage={errors.address?.message}
+            />
+          )}
         />
 
-        <CheckoutInput
-          ref={cityRef}
-          label="City"
-          placeholder="Enter city"
-          value={city}
-          onChangeText={setCity}
+        <Controller
+          control={control}
+          name="city"
+          rules={{
+            validate: validateCityField,
+          }}
+          render={({ field: { value, onChange } }) => (
+            <CheckoutInput
+              label="City"
+              placeholder="Enter city"
+              value={value}
+              onChangeText={onChange}
+              errorMessage={errors.city?.message}
+            />
+          )}
         />
       </View>
 
       <View style={styles.buttonContainer}>
-        <CheckoutButton title="Submit" onPress={handleSubmit} />
+        <CheckoutButton title="Submit" onPress={handleSubmit(onSubmit)} />
       </View>
     </View>
   );

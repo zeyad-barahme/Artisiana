@@ -77,15 +77,12 @@ export function useCart() {
 
   const filteredItems = useMemo(() => {
     return cartItems.filter((item) =>
-      item.title.toLowerCase().includes(search.toLowerCase())
+      item.title.toLowerCase().includes(search.toLowerCase()),
     );
   }, [cartItems, search]);
 
   const total = useMemo(() => {
-    return cartItems.reduce(
-      (sum, item) => sum + item.price * item.quantity,
-      0
-    );
+    return cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
   }, [cartItems]);
 
   const totalItems = useMemo(() => {
@@ -104,27 +101,22 @@ export function useCart() {
         quantity: item.quantity + 1,
       });
     },
-    [cartItems]
+    [cartItems],
   );
 
   const decreaseQuantity = useCallback(
     async (id: string) => {
       const item = cartItems.find((i) => i.id === id);
 
-      if (!item) return;
+      if (!item || item.quantity <= 1) return;
 
       const ref = doc(db, "cart", id);
-
-      if (item.quantity <= 1) {
-        await deleteDoc(ref);
-        return;
-      }
 
       await updateDoc(ref, {
         quantity: item.quantity - 1,
       });
     },
-    [cartItems]
+    [cartItems],
   );
 
   const deleteItem = useCallback(async (id: string) => {
@@ -133,7 +125,7 @@ export function useCart() {
 
   const clearCart = useCallback(async () => {
     await Promise.all(
-      cartItems.map((item) => deleteDoc(doc(db, "cart", item.id)))
+      cartItems.map((item) => deleteDoc(doc(db, "cart", item.id))),
     );
   }, [cartItems]);
 

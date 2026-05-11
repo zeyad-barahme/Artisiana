@@ -2,118 +2,59 @@ import { auth } from "@/api/firebase";
 import { useCart } from "@/hooks/useCart";
 import { createCheckoutOrder } from "@/services/orders/checkoutOrder.service";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
+import { useForm } from "react-hook-form";
 import { Alert, StyleSheet, TextInput, View } from "react-native";
 import CheckoutHeader from "../checkout/CheckoutHeader";
 import CheckoutButton from "../shared/CheckoutButton";
 import { CheckoutProgress } from "../shared/CheckoutProgress";
-import PaymentForm from "./PaymentForm";
+import PaymentForm, { type PaymentFormValues } from "./PaymentForm";
 import PaymentSummary from "./PaymentSummary";
-import {
-  cleanPaymentDetails,
-  formatExpireDate,
-  validatePaymentDetails,
-} from "./paymentValidation";
+import { cleanPaymentDetails, formatExpireDate } from "./paymentValidation";
 
-export default function PaymentScreen() {
+type PaymentContentProps = {
+  fullName: string;
+  phoneNumber: string;
+  address: string;
+  city: string;
+};
+
+function PaymentContent({
+  fullName,
+  phoneNumber,
+  address,
+  city,
+}: PaymentContentProps) {
   const { total, cartItems } = useCart();
   const router = useRouter();
-  const params = useLocalSearchParams();
 
-  const [cardNumber, setCardNumber] = useState("");
-  const [cardholderName, setCardholderName] = useState("");
-  const [expireDate, setExpireDate] = useState("");
-  const [cvc, setCvc] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<PaymentFormValues>({
+    mode: "onChange",
+    defaultValues: {
+      cardNumber: "",
+      cardholderName: "",
+      expireDate: "",
+      cvc: "",
+    },
+  });
 
   const cardNumberRef = useRef<TextInput>(null);
   const cardholderNameRef = useRef<TextInput>(null);
   const expireDateRef = useRef<TextInput>(null);
   const cvcRef = useRef<TextInput>(null);
 
-  const fullName = String(params.fullName ?? "");
-  const phoneNumber = String(params.phoneNumber ?? "");
-  const address = String(params.address ?? "");
-  const city = String(params.city ?? "");
-  const paymentReset = String(params.paymentReset ?? "");
-
-  useEffect(() => {
-    if (paymentReset) {
-      setCardNumber("");
-      setCardholderName("");
-      setExpireDate("");
-      setCvc("");
-    }
-  }, [paymentReset]);
-
-  const focusInvalidPaymentInput = (title: string) => {
-    if (cardNumber.trim() === "") {
-      cardNumberRef.current?.focus();
-      return;
-    }
-
-    if (cardholderName.trim() === "") {
-      cardholderNameRef.current?.focus();
-      return;
-    }
-
-    if (expireDate.trim() === "") {
-      expireDateRef.current?.focus();
-      return;
-    }
-
-    if (cvc.trim() === "") {
-      cvcRef.current?.focus();
-      return;
-    }
-
-    if (title.includes("Card Number")) {
-      cardNumberRef.current?.focus();
-      return;
-    }
-
-    if (title.includes("Cardholder Name")) {
-      cardholderNameRef.current?.focus();
-      return;
-    }
-
-    if (title.includes("Expire Date")) {
-      expireDateRef.current?.focus();
-      return;
-    }
-
-    if (title.includes("CVC")) {
-      cvcRef.current?.focus();
-      return;
-    }
-
-    cardNumberRef.current?.focus();
-  };
-
-  const handlePay = async () => {
+  const handlePay = async (values: PaymentFormValues) => {
     if (isSaving) {
       return;
     }
 
-    const validation = validatePaymentDetails({
-      cardNumber,
-      cardholderName,
-      expireDate,
-      cvc,
-    });
-
-    if (!validation.isValid) {
-      Alert.alert(validation.title, validation.message);
-      focusInvalidPaymentInput(validation.title);
-      return;
-    }
-
-    const cleanedPayment = cleanPaymentDetails({
-      cardNumber,
-      cardholderName,
-      expireDate,
-      cvc,
-    });
+    const cleanedPayment = cleanPaymentDetails(values);
 
     if (!fullName || !phoneNumber || !address || !city) {
       Alert.alert(
@@ -181,14 +122,9 @@ export default function PaymentScreen() {
         <PaymentSummary total={total} />
 
         <PaymentForm
-          cardNumber={cardNumber}
-          cardholderName={cardholderName}
-          expireDate={expireDate}
-          cvc={cvc}
-          onCardNumberChange={setCardNumber}
-          onCardholderNameChange={setCardholderName}
-          onExpireDateChange={(text) => setExpireDate(formatExpireDate(text))}
-          onCvcChange={setCvc}
+          control={control}
+          errors={errors}
+          formatExpireDate={formatExpireDate}
           cardNumberRef={cardNumberRef}
           cardholderNameRef={cardholderNameRef}
           expireDateRef={expireDateRef}
@@ -198,11 +134,31 @@ export default function PaymentScreen() {
         <View style={styles.buttonContainer}>
           <CheckoutButton
             title={isSaving ? "Saving..." : "Pay"}
-            onPress={handlePay}
+            onPress={handleSubmit(handlePay)}
           />
         </View>
       </View>
     </View>
+  );
+}
+
+export default function PaymentScreen() {
+  const params = useLocalSearchParams();
+
+  const fullName = String(params.fullName ?? "");
+  const phoneNumber = String(params.phoneNumber ?? "");
+  const address = String(params.address ?? "");
+  const city = String(params.city ?? "");
+  const paymentReset = String(params.paymentReset ?? "default");
+
+  return (
+    <PaymentContent
+      key={paymentReset}
+      fullName={fullName}
+      phoneNumber={phoneNumber}
+      address={address}
+      city={city}
+    />
   );
 }
 

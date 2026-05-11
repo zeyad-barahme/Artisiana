@@ -9,6 +9,88 @@ type CheckoutDetailsInput = {
   city: string;
 };
 
+type FieldValidationResult = true | string;
+
+export function validateFullNameField(value: string): FieldValidationResult {
+  const cleanValue = value.trim();
+
+  if (cleanValue === "") {
+    return "Full name is required.";
+  }
+
+  if (/\d/.test(cleanValue)) {
+    return "Full name must not contain numbers.";
+  }
+
+  if (cleanValue.length < 7) {
+    return "Full name must be at least 7 characters.";
+  }
+
+  if (cleanValue.length > 36) {
+    return "Full name must not be more than 36 characters.";
+  }
+
+  return true;
+}
+
+export function validatePhoneNumberField(value: string): FieldValidationResult {
+  const cleanValue = value.trim();
+
+  if (cleanValue === "") {
+    return "Phone number is required.";
+  }
+
+  if (!/^\d+$/.test(cleanValue)) {
+    return "Phone number must contain numbers only.";
+  }
+
+  if (cleanValue.length < 6) {
+    return "Phone number must be at least 6 digits.";
+  }
+
+  if (cleanValue.length > 13) {
+    return "Phone number must not be more than 13 digits.";
+  }
+
+  return true;
+}
+
+export function validateAddressField(value: string): FieldValidationResult {
+  const cleanValue = value.trim();
+
+  if (cleanValue === "") {
+    return "Address is required.";
+  }
+
+  if (/\d/.test(cleanValue)) {
+    return "Address must not contain numbers.";
+  }
+
+  if (cleanValue.length < 3) {
+    return "Address must be at least 3 characters.";
+  }
+
+  return true;
+}
+
+export function validateCityField(value: string): FieldValidationResult {
+  const cleanValue = value.trim();
+
+  if (cleanValue === "") {
+    return "City is required.";
+  }
+
+  if (/\d/.test(cleanValue)) {
+    return "City must not contain numbers.";
+  }
+
+  if (cleanValue.length < 3) {
+    return "City must be at least 3 characters.";
+  }
+
+  return true;
+}
+
 export function validateCheckoutDetails({
   fullName,
   phoneNumber,
@@ -33,83 +115,43 @@ export function validateCheckoutDetails({
     };
   }
 
-  if (/\d/.test(cleanFullName)) {
+  const fullNameError = validateFullNameField(fullName);
+
+  if (fullNameError !== true) {
     return {
       isValid: false,
       title: "Invalid Full Name",
-      message: "Full name must not contain numbers.",
+      message: fullNameError,
     };
   }
 
-  if (cleanFullName.length < 7) {
-    return {
-      isValid: false,
-      title: "Invalid Full Name",
-      message: "Full name must be at least 7 characters.",
-    };
-  }
+  const phoneNumberError = validatePhoneNumberField(phoneNumber);
 
-  if (cleanFullName.length > 36) {
-    return {
-      isValid: false,
-      title: "Invalid Full Name",
-      message: "Full name must not be more than 36 characters.",
-    };
-  }
-
-  if (!/^\d+$/.test(cleanPhoneNumber)) {
+  if (phoneNumberError !== true) {
     return {
       isValid: false,
       title: "Invalid Phone Number",
-      message: "Phone number must contain numbers only.",
+      message: phoneNumberError,
     };
   }
 
-  if (cleanPhoneNumber.length < 6) {
-    return {
-      isValid: false,
-      title: "Invalid Phone Number",
-      message: "Phone number must be at least 6 digits.",
-    };
-  }
+  const addressError = validateAddressField(address);
 
-  if (cleanPhoneNumber.length > 13) {
-    return {
-      isValid: false,
-      title: "Invalid Phone Number",
-      message: "Phone number must not be more than 13 digits.",
-    };
-  }
-
-  if (/\d/.test(cleanAddress)) {
+  if (addressError !== true) {
     return {
       isValid: false,
       title: "Invalid Address",
-      message: "Address must not contain numbers.",
+      message: addressError,
     };
   }
 
-  if (cleanAddress.length < 3) {
-    return {
-      isValid: false,
-      title: "Invalid Address",
-      message: "Address must be at least 3 characters.",
-    };
-  }
+  const cityError = validateCityField(city);
 
-  if (/\d/.test(cleanCity)) {
+  if (cityError !== true) {
     return {
       isValid: false,
       title: "Invalid City",
-      message: "City must not contain numbers.",
-    };
-  }
-
-  if (cleanCity.length < 3) {
-    return {
-      isValid: false,
-      title: "Invalid City",
-      message: "City must be at least 3 characters.",
+      message: cityError,
     };
   }
 
