@@ -17,7 +17,7 @@ export default function BottomNav() {
 
       <View style={styles.centerLogo}>
         <Image
-          source={require('../../assets/images/Logo.png')}
+          source={require('../../assets/images/logo.png')}
           style={styles.logo}
         />
       </View>
