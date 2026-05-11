@@ -7,7 +7,7 @@ export default function AppBar() {
   return (
     <View style={styles.wrapper}>
       <Image
-        source={require('../../assets/images/logo.png')}
+        source={require('../../assets/images/Logo.png')}
         style={styles.logoImage}
         resizeMode="contain"
       />

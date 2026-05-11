@@ -1,25 +1,36 @@
 import { Rancho_400Regular, useFonts } from "@expo-google-fonts/rancho";
 import { useRouter } from "expo-router";
 import { useState, useEffect } from "react";
-import { Image, ScrollView, StyleSheet, Text, View, ActivityIndicator } from "react-native";
-import { collection, query, where, getDocs } from "firebase/firestore"; 
-import { db } from "../../api/firebase"; 
-import AppBar from '../../components/layout/AppBar';
-import ProductCard from "../../components/ProductCard1w";
-import BottomNavBar from '../../components/layout/BottomNavBar';
+import {
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  ActivityIndicator,
+  Alert,
+} from "react-native";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { db } from "../../api/firebase";
 
+import AppBar from "../../components/layout/AppBar";
+import ProductCard from "../../components/ProductCard1w";
+import BottomNavBar from "../../components/layout/BottomNavBar";
+import { useCart } from "../../hooks/useCart";
 
 const localImages: { [key: string]: any } = {
-  "ac1": require("../../assets/images/A1/ac1.webp"),
-  "ac2": require("../../assets/images/A1/ac2.jpg"),
-  "ac3": require("../../assets/images/A1/ac3.webp"),
-  "ac4": require("../../assets/images/A1/ac4.avif"),
-  "ac5": require("../../assets/images/A1/ac5.webp"),
-  "ac6": require("../../assets/images/A1/ac6.webp"),
+  ac1: require("../../assets/images/A1/ac1.webp"),
+  ac2: require("../../assets/images/A1/ac2.jpg"),
+  ac3: require("../../assets/images/A1/ac3.webp"),
+  ac4: require("../../assets/images/A1/ac4.avif"),
+  ac5: require("../../assets/images/A1/ac5.webp"),
+  ac6: require("../../assets/images/A1/ac6.webp"),
 };
 
 export default function Accessories() {
   const router = useRouter();
+  const { addToCart } = useCart();
+
   const [fontsLoaded] = useFonts({ Rancho_400Regular });
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -27,13 +38,18 @@ export default function Accessories() {
   useEffect(() => {
     const fetchAccessories = async () => {
       try {
-        const q = query(collection(db, "products"), where("category", "==", "Accessories"));
-        
+        const q = query(
+          collection(db, "products"),
+          where("category", "==", "Accessories")
+        );
+
         const querySnapshot = await getDocs(q);
-        const items = querySnapshot.docs.map(doc => ({
+
+        const items = querySnapshot.docs.map((doc) => ({
           id: doc.id,
-          ...doc.data()
+          ...doc.data(),
         }));
+
         setProducts(items);
       } catch (error) {
         console.error("Error fetching accessories: ", error);
@@ -41,11 +57,30 @@ export default function Accessories() {
         setLoading(false);
       }
     };
+
     fetchAccessories();
   }, []);
 
+  const handleAddToCart = (item: any) => {
+    addToCart({
+      id: item.id,
+      title: item.title,
+      price: item.price,
+      image: item.image,
+      quantity: 1,
+    });
+
+    Alert.alert("Added", "Product added to cart successfully.");
+  };
+
   if (!fontsLoaded || loading) {
-    return <ActivityIndicator size="large" color="#FF5E22" style={{ flex: 1 }} />;
+    return (
+      <ActivityIndicator
+        size="large"
+        color="#FF5E22"
+        style={{ flex: 1 }}
+      />
+    );
   }
 
   return (
@@ -55,7 +90,7 @@ export default function Accessories() {
         contentContainerStyle={{ paddingBottom: 100 }}
       >
         <AppBar />
-       
+
         <Image
           source={require("../../assets/images/A1/ac.png")}
           style={styles.coverImage}
@@ -67,15 +102,23 @@ export default function Accessories() {
           {products.map((item) => (
             <ProductCard
               key={item.id}
+              id={item.id}
               title={item.title}
-              desc={item.desc}
+              desc={item.desc || ""}
               price={item.price}
-              image={localImages[item.image] || require("../../assets/images/A1/ac1.webp")}
-              
-              onPressCard={() => router.push({
-                pathname: "/productDetails",
-                params: { productId: item.id }
-              })}
+              category={item.category}
+              rating={item.rating}
+              image={
+                localImages[item.image] ||
+                require("../../assets/images/A1/ac1.webp")
+              }
+              onAdd={() => handleAddToCart(item)}
+              onPressCard={() =>
+                router.push({
+                  pathname: "/(tabs)/productDetails",
+                  params: { productId: item.id },
+                })
+              }
             />
           ))}
         </View>
@@ -87,14 +130,14 @@ export default function Accessories() {
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: "#f5f5f5" 
+  container: {
+    flex: 1,
+    backgroundColor: "#f5f5f5",
   },
-  coverImage: { 
-    width: "100%", 
-    height: 280, 
-    resizeMode: "cover" 
+  coverImage: {
+    width: "100%",
+    height: 280,
+    resizeMode: "cover",
   },
   title: {
     fontSize: 30,

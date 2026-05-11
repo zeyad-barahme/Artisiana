@@ -10,17 +10,19 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Alert,
 } from 'react-native';
 import { router } from 'expo-router';
 import type { Href } from 'expo-router';
 import { collection, getDocs } from 'firebase/firestore';
 
 import CategoryCard from '../../components/common/CategoryCard';
-import ProductCard from '../../components/common/ProductCard';
+import ProductCard1w from '../../components/ProductCard1w';
 import AppBar from '../../components/layout/AppBar';
 import BottomNavBar from '../../components/layout/BottomNavBar';
 import { db } from '../../api/firebase';
 import { heroData } from '../../components/data/homeData';
+import { useCart } from '../../hooks/useCart';
 
 const BG = '#FFF7F3';
 const TEXT = '#222222';
@@ -38,11 +40,51 @@ type Product = {
   title: string;
   image: string;
   price: number;
-  rating: number;
-  category: string;
+  rating?: number;
+  category?: string;
+  desc?: string;
+};
+
+const productImages: Record<string, any> = {
+  ac: require('../../assets/images/A1/ac.png'),
+  ac1: require('../../assets/images/A1/ac1.webp'),
+  ac2: require('../../assets/images/A1/ac2.jpg'),
+  ac3: require('../../assets/images/A1/ac3.webp'),
+  ac4: require('../../assets/images/A1/ac4.avif'),
+  ac5: require('../../assets/images/A1/ac5.webp'),
+  ac6: require('../../assets/images/A1/ac6.webp'),
+
+  ce: require('../../assets/images/A1/ce.png'),
+  ce1: require('../../assets/images/A1/ce1.webp'),
+  ce2: require('../../assets/images/A1/ce2.webp'),
+  ce3: require('../../assets/images/A1/ce3.webp'),
+  ce4: require('../../assets/images/A1/ce4.jpg'),
+  ce5: require('../../assets/images/A1/ce5.webp'),
+  ce6: require('../../assets/images/A1/ce6.jpg'),
+
+  a: require('../../assets/images/A1/a.webp'),
+  b: require('../../assets/images/A1/b.jpg'),
+  c: require('../../assets/images/A1/c.png'),
+  d: require('../../assets/images/A1/d.jpg'),
+  e: require('../../assets/images/A1/e.jpg'),
+  f: require('../../assets/images/A1/f.jpg'),
+};
+
+const getProductImage = (image?: string) => {
+  if (!image) {
+    return require('../../assets/images/A1/a.webp');
+  }
+
+  if (image.startsWith('http')) {
+    return image;
+  }
+
+  return productImages[image] || require('../../assets/images/A1/a.webp');
 };
 
 export default function HomeScreen() {
+  const { addToCart } = useCart();
+
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
@@ -52,10 +94,12 @@ export default function HomeScreen() {
     const fetchCategories = async () => {
       try {
         const querySnapshot = await getDocs(collection(db, 'categories'));
+
         const categoriesData = querySnapshot.docs.map((doc) => ({
           id: doc.id,
           ...(doc.data() as Omit<Category, 'id'>),
         }));
+
         setCategories(categoriesData);
       } catch (error) {
         console.log('Error fetching categories:', error);
@@ -67,10 +111,12 @@ export default function HomeScreen() {
     const fetchProducts = async () => {
       try {
         const querySnapshot = await getDocs(collection(db, 'products'));
+
         const productsData = querySnapshot.docs.map((doc) => ({
           id: doc.id,
           ...(doc.data() as Omit<Product, 'id'>),
         }));
+
         setProducts(productsData);
       } catch (error) {
         console.log('Error fetching products:', error);
@@ -82,6 +128,25 @@ export default function HomeScreen() {
     fetchCategories();
     fetchProducts();
   }, []);
+
+  const goToProductDetails = (productId: string) => {
+    router.push({
+      pathname: '/(tabs)/productDetails',
+      params: { productId },
+    } as Href);
+  };
+
+  const handleAddToCart = (item: Product) => {
+    addToCart({
+      id: item.id,
+      title: item.title,
+      price: item.price,
+      image: item.image,
+      quantity: 1,
+    });
+
+    Alert.alert('Added', 'Product added to cart successfully.');
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -139,12 +204,16 @@ export default function HomeScreen() {
             data={products}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
-              <ProductCard
+              <ProductCard1w
+                id={item.id}
                 title={item.title}
                 category={item.category}
                 price={item.price}
                 rating={item.rating}
-                image={item.image}
+                image={getProductImage(item.image)}
+                desc={item.desc || ''}
+                onAdd={() => handleAddToCart(item)}
+                onPressCard={() => goToProductDetails(item.id)}
               />
             )}
             horizontal

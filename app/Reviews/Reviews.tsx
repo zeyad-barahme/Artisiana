@@ -1,7 +1,15 @@
-import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import {
+  ActivityIndicator,
+  FlatList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { Appbar } from 'react-native-paper';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 
-import ReviewScreenHeader from '@/components/reviews/review-screen-header';
 import ReviewScreenShell from '@/components/reviews/review-screen-shell';
 import StarRating from '@/components/reviews/star-rating';
 import type { ReviewItem } from '@/components/reviews/types';
@@ -14,61 +22,95 @@ function ReviewRow({ item }: { item: ReviewItem }) {
         <View style={[styles.avatar, { backgroundColor: item.avatarColor }]}>
           <Text style={styles.avatarLabel}>{item.avatarLabel}</Text>
         </View>
+
         <View style={styles.reviewTextBlock}>
           <Text style={styles.userName}>{item.userName}</Text>
+
           <Text style={styles.commentText}>
             {item.comment || 'No written comment was added.'}
           </Text>
         </View>
       </View>
+
       <StarRating rating={item.rating} size={20} />
     </View>
   );
 }
 
 export default function Reviews() {
+  const router = useRouter();
+  const params = useLocalSearchParams();
+
+  const productId = Array.isArray(params.productId)
+    ? params.productId[0]
+    : params.productId;
+
   const [reviews, setReviews] = useState<ReviewItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
 
-  useEffect(() => {
-    let isMounted = true;
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
 
-    async function loadReviews() {
-      try {
-        const nextReviews = await getReviews();
+      async function loadReviews() {
+        setIsLoading(true);
 
-        if (!isMounted) {
-          return;
-        }
+        try {
+          const allReviews = await getReviews();
 
-        setReviews(nextReviews);
-        setErrorMessage('');
-      } catch {
-        if (!isMounted) {
-          return;
-        }
+          const filteredReviews = productId
+            ? allReviews.filter((review: any) => review.productId === productId)
+            : allReviews;
 
-        setErrorMessage('Could not load reviews right now.');
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
+          if (!isActive) return;
+
+          setReviews(filteredReviews);
+          setErrorMessage('');
+        } catch (error) {
+          if (!isActive) return;
+
+          console.log('Error loading reviews:', error);
+          setErrorMessage('Could not load reviews right now.');
+        } finally {
+          if (isActive) {
+            setIsLoading(false);
+          }
         }
       }
-    }
 
-    loadReviews();
+      loadReviews();
 
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+      return () => {
+        isActive = false;
+      };
+    }, [productId])
+  );
 
   const reviewSummary = getReviewSummary(reviews);
 
+  const goBackToProduct = () => {
+    if (productId) {
+      router.replace({
+        pathname: '/(tabs)/productDetails',
+        params: { productId },
+      });
+    } else {
+      router.back();
+    }
+  };
+
   return (
     <ReviewScreenShell>
-      <ReviewScreenHeader />
+      <View style={styles.header}>
+        <TouchableOpacity onPress={goBackToProduct}>
+          <Appbar.Action icon="arrow-left" color="#000" />
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={() => router.push('/(tabs)/cart')}>
+          <Appbar.Action icon="cart-outline" color="#FF5E22" />
+        </TouchableOpacity>
+      </View>
 
       <Text style={styles.title}>Reviews</Text>
 
@@ -78,6 +120,7 @@ export default function Reviews() {
           totalStars={reviewSummary.totalStars}
           size={18}
         />
+
         <Text style={styles.summaryText}>{reviewSummary.headline}</Text>
       </View>
 
@@ -96,7 +139,7 @@ export default function Reviews() {
 
       {!isLoading && !errorMessage && reviews.length === 0 ? (
         <View style={styles.feedbackState}>
-          <Text style={styles.feedbackText}>No reviews yet.</Text>
+          <Text style={styles.feedbackText}>No reviews yet for this product.</Text>
         </View>
       ) : null}
 
@@ -115,6 +158,13 @@ export default function Reviews() {
 }
 
 const styles = StyleSheet.create({
+  header: {
+    marginTop: 18,
+    marginBottom: 4,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   title: {
     marginTop: 18,
     textAlign: 'center',
