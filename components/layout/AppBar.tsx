@@ -1,11 +1,18 @@
+import { auth } from "@/api/firebase";
 import { useCart } from "@/hooks/useCart";
 import { Feather } from "@expo/vector-icons";
 import type { Href } from "expo-router";
 import { router } from "expo-router";
-import { useMemo, useState } from "react";
-import { Image, StyleSheet, Text, TouchableOpacity, View, Alert } from "react-native";
 import { signOut } from "firebase/auth";
-import { auth } from "@/api/firebase";
+import { useMemo, useState } from "react";
+import {
+  Alert,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 export default function AppBar() {
   const { cartItems } = useCart();
@@ -16,27 +23,23 @@ export default function AppBar() {
   }, [cartItems]);
 
   const handleLogout = async () => {
-    Alert.alert(
-      "Logout",
-      "Are you sure you want to logout?",
-      [
-        { text: "Cancel", onPress: () => {}, style: "cancel" },
-        {
-          text: "Logout",
-          onPress: async () => {
-            try {
-              setLoggingOut(true);
-              await signOut(auth);
-              router.replace("/entry-gate" as Href);
-            } catch (error) {
-              Alert.alert("Error", "Failed to logout");
-              setLoggingOut(false);
-            }
-          },
-          style: "destructive",
+    Alert.alert("Logout", "Are you sure you want to logout?", [
+      { text: "Cancel", onPress: () => {}, style: "cancel" },
+      {
+        text: "Logout",
+        onPress: async () => {
+          try {
+            setLoggingOut(true);
+            await signOut(auth);
+            router.replace("/entry-gate" as Href);
+          } catch (error) {
+            Alert.alert("Error", "Failed to logout");
+            setLoggingOut(false);
+          }
         },
-      ]
-    );
+        style: "destructive",
+      },
+    ]);
   };
 
   return (
