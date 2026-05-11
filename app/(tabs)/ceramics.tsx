@@ -1,20 +1,87 @@
 import { Rancho_400Regular, useFonts } from "@expo-google-fonts/rancho";
-import { useState } from "react";
-import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
-import { Appbar } from "react-native-paper";
-import AppBar from '../../components/layout/AppBar';
+import { useRouter } from "expo-router";
+import { useState, useEffect } from "react";
+import {
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  ActivityIndicator,
+  Alert,
+} from "react-native";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { db } from "../../api/firebase";
+
+import AppBar from "../../components/layout/AppBar";
 import ProductCard from "../../components/ProductCard1w";
-import BottomNavBar from '../../components/layout/BottomNavBar';
+import BottomNavBar from "../../components/layout/BottomNavBar";
+import { useCart } from "../../hooks/useCart";
+
+const localImages: { [key: string]: any } = {
+  ce: require("../../assets/images/A1/ce.png"),
+  ce1: require("../../assets/images/A1/ce1.webp"),
+  ce2: require("../../assets/images/A1/ce2.webp"),
+  ce3: require("../../assets/images/A1/ce3.webp"),
+  ce4: require("../../assets/images/A1/ce4.jpg"),
+  ce5: require("../../assets/images/A1/ce5.webp"),
+  ce6: require("../../assets/images/A1/ce6.jpg"),
+};
+
 export default function Ceramics() {
-  const [fontsLoaded] = useFonts({
-    Rancho_400Regular,
-  });
+  const router = useRouter();
+  const { addToCart } = useCart();
 
-  const [showNav, setShowNav] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
+  const [fontsLoaded] = useFonts({ Rancho_400Regular });
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  if (!fontsLoaded) {
-    return null;
+  useEffect(() => {
+    const fetchCeramics = async () => {
+      try {
+        const q = query(
+          collection(db, "products"),
+          where("category", "==", "Ceramics")
+        );
+
+        const querySnapshot = await getDocs(q);
+
+        const items = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+
+        setProducts(items);
+      } catch (error) {
+        console.error("Error fetching ceramics: ", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCeramics();
+  }, []);
+
+  const handleAddToCart = (item: any) => {
+    addToCart({
+      id: item.id,
+      title: item.title,
+      price: item.price,
+      image: item.image,
+      quantity: 1,
+    });
+
+    Alert.alert("Added", "Product added to cart successfully.");
+  };
+
+  if (!fontsLoaded || loading) {
+    return (
+      <ActivityIndicator
+        size="large"
+        color="#FF5E22"
+        style={{ flex: 1 }}
+      />
+    );
   }
 
   return (
@@ -22,79 +89,43 @@ export default function Ceramics() {
       <ScrollView
         style={styles.container}
         contentContainerStyle={{ paddingBottom: 100 }}
-        scrollEventThrottle={8}
-        onScroll={(event) => {
-          const currentY = event.nativeEvent.contentOffset.y;
-          const diff = currentY - lastScrollY;
-
-          if (diff > 5) {
-            setShowNav(false); // 👇 نازل
-          } else if (diff < -5) {
-            setShowNav(true); // 👆 طالع
-          }
-
-          setLastScrollY(currentY);
-        }}
       >
-        {/* 🔥 App Bar */}
         <AppBar />
 
-        {/* 🖼️ Cover */}
         <Image
           source={require("../../assets/images/A1/ce.png")}
           style={styles.image}
         />
 
-        {/* 📌 Title */}
         <Text style={styles.title}>Ceramics</Text>
 
-        {/* 🧩 Products */}
         <View style={styles.productsContainer}>
-          <ProductCard
-            title="Ceramic Vase"
-            desc="Ceramic Vase Handmade Raw Stoneware Pottery Vases for Home Decor"
-            price={25}
-            image={require("../../assets/images/A1/ce1.webp")}
-          />
-
-          <ProductCard
-            title=" Ceramic Bowl"
-            desc="Handmade Carved Ceramic Serving Bowl: Dark Gray Pottery"
-            price={9}
-            image={require("../../assets/images/A1/ce2.webp")}
-          />
-
-          <ProductCard
-            title="Ceramic Teapot's"
-            desc="Our Australian designed Ceramic Teapot's have been handmade for all of the tea lovers out there!"
-            price={15}
-            image={require("../../assets/images/A1/ce3.webp")}
-          />
-
-          <ProductCard
-            title="ceramic bears"
-            desc="Chi’s handmade ceramic bears, blending art and function"
-            price={10}
-            image={require("../../assets/images/A1/ce4.jpg")}
-          />
-
-          <ProductCard
-            title="Ceramic Bird"
-            desc="Handmade Ceramic Bird Sculptures – Mini & Small Sizes"
-            price={12}
-            image={require("../../assets/images/A1/ce5.webp")}
-          />
-
-          <ProductCard
-            title="Ceramic Mug"
-            desc="Large You’ve Got This, Handmade Ceramic Green Stoneware Mug"
-            price={8}
-            image={require("../../assets/images/A1/ce6.jpg")}
-          />
+          {products.map((item) => (
+            <ProductCard
+              key={item.id}
+              id={item.id}
+              title={item.title}
+              desc={item.desc || ""}
+              price={item.price}
+              category={item.category}
+              rating={item.rating}
+              image={
+                localImages[item.image] ||
+                require("../../assets/images/A1/ce1.webp")
+              }
+              onAdd={() => handleAddToCart(item)}
+              onPressCard={() =>
+                router.push({
+                  pathname: "/(tabs)/productDetails",
+                  params: { productId: item.id },
+                })
+              }
+            />
+          ))}
         </View>
       </ScrollView>
 
-     <BottomNavBar />
+      <BottomNavBar />
     </View>
   );
 }
@@ -104,24 +135,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f5f5f5",
   },
-
-  appName: {
-    fontSize: 22,
-    color: "#FF5E22",
-    fontFamily: "Rancho_400Regular",
-    marginLeft: 110,
-  },
-
-  icons: {
-    flexDirection: "row",
-  },
-
   image: {
     width: "100%",
     height: 280,
     resizeMode: "cover",
   },
-
   title: {
     fontSize: 30,
     textAlign: "center",
@@ -129,37 +147,10 @@ const styles = StyleSheet.create({
     marginTop: 25,
     fontFamily: "Rancho_400Regular",
   },
-
   productsContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
     paddingHorizontal: 10,
-  },
-
-  bottomNav: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    height: 55,
-    borderTopWidth: 1,
-    borderColor: "#eee",
-    position: "absolute",
-    bottom: 0,
-    width: "100%",
-  },
-
-  centerLogo: {
-    backgroundColor: "#fff",
-    padding: 5,
-    borderRadius: 50,
-    marginTop: -4,
-  },
-
-  logoBottom: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
   },
 });

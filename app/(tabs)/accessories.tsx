@@ -1,20 +1,86 @@
 import { Rancho_400Regular, useFonts } from "@expo-google-fonts/rancho";
-import { useState } from "react";
-import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
-import { Appbar } from "react-native-paper";
-import AppBar from '../../components/layout/AppBar';
+import { useRouter } from "expo-router";
+import { useState, useEffect } from "react";
+import {
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  ActivityIndicator,
+  Alert,
+} from "react-native";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { db } from "../../api/firebase";
+
+import AppBar from "../../components/layout/AppBar";
 import ProductCard from "../../components/ProductCard1w";
-import BottomNavBar from '../../components/layout/BottomNavBar';
-export default function Ceramics() {
-  const [fontsLoaded] = useFonts({
-    Rancho_400Regular,
-  });
+import BottomNavBar from "../../components/layout/BottomNavBar";
+import { useCart } from "../../hooks/useCart";
 
-  const [showNav, setShowNav] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
+const localImages: { [key: string]: any } = {
+  ac1: require("../../assets/images/A1/ac1.webp"),
+  ac2: require("../../assets/images/A1/ac2.jpg"),
+  ac3: require("../../assets/images/A1/ac3.webp"),
+  ac4: require("../../assets/images/A1/ac4.avif"),
+  ac5: require("../../assets/images/A1/ac5.webp"),
+  ac6: require("../../assets/images/A1/ac6.webp"),
+};
 
-  if (!fontsLoaded) {
-    return null;
+export default function Accessories() {
+  const router = useRouter();
+  const { addToCart } = useCart();
+
+  const [fontsLoaded] = useFonts({ Rancho_400Regular });
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAccessories = async () => {
+      try {
+        const q = query(
+          collection(db, "products"),
+          where("category", "==", "Accessories")
+        );
+
+        const querySnapshot = await getDocs(q);
+
+        const items = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+
+        setProducts(items);
+      } catch (error) {
+        console.error("Error fetching accessories: ", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAccessories();
+  }, []);
+
+  const handleAddToCart = (item: any) => {
+    addToCart({
+      id: item.id,
+      title: item.title,
+      price: item.price,
+      image: item.image,
+      quantity: 1,
+    });
+
+    Alert.alert("Added", "Product added to cart successfully.");
+  };
+
+  if (!fontsLoaded || loading) {
+    return (
+      <ActivityIndicator
+        size="large"
+        color="#FF5E22"
+        style={{ flex: 1 }}
+      />
+    );
   }
 
   return (
@@ -22,81 +88,43 @@ export default function Ceramics() {
       <ScrollView
         style={styles.container}
         contentContainerStyle={{ paddingBottom: 100 }}
-        scrollEventThrottle={8}
-        onScroll={(event) => {
-          const currentY = event.nativeEvent.contentOffset.y;
-          const diff = currentY - lastScrollY;
-
-          if (diff > 5) {
-            setShowNav(false); // 👇 نازل
-          } else if (diff < -5) {
-            setShowNav(true); // 👆 طالع
-          }
-
-          setLastScrollY(currentY);
-        }}
       >
-        {/* 🔥 App Bar */}
         <AppBar />
-        
 
-        {/* 🖼️ Cover */}
         <Image
           source={require("../../assets/images/A1/ac.png")}
-          style={styles.image}
+          style={styles.coverImage}
         />
 
-        {/* 📌 Title */}
         <Text style={styles.title}>Accessories</Text>
 
-        {/* 🧩 Products */}
         <View style={styles.productsContainer}>
-          <ProductCard
-            title="PomPom Elasticated"
-            desc="Handcrafted PomPom Elasticated Pet collar. Available in a range of sizes in our Halloween design."
-            price={6}
-            image={require("../../assets/images/A1/ac1.webp")}
-          />
-
-          <ProductCard
-            title="DIY Bracelet Kit"
-            desc="DIY Kit for weaving your own bracelets - with reusable loom"
-            price={15}
-            image={require("../../assets/images/A1/ac2.jpg")}
-          />
-
-          <ProductCard
-            title="Handmade Bag"
-            desc="Handmade Crochet Weekend Bag: Purple Cotton with Leather Handles"
-            price={30}
-            image={require("../../assets/images/A1/ac3.webp")}
-          />
-
-          <ProductCard
-            title=" Jacquard Beaded "
-            desc="HANDMADE - Jacquard Beaded Headband Unique Design 2"
-            price={50}
-            image={require("../../assets/images/A1/ac4.avif")}
-          />
-
-          <ProductCard
-            title="Colorful Resin "
-            desc="Colorful Resin and Green Agate Earring for Women"
-            price={45}
-            image={require("../../assets/images/A1/ac5.webp")}
-          />
-
-          <ProductCard
-            title="Daisy Necklace"
-            desc="Daisy Necklace with Bronze Center"
-            price={65}
-            image={require("../../assets/images/A1/ac6.webp")}
-          />
+          {products.map((item) => (
+            <ProductCard
+              key={item.id}
+              id={item.id}
+              title={item.title}
+              desc={item.desc || ""}
+              price={item.price}
+              category={item.category}
+              rating={item.rating}
+              image={
+                localImages[item.image] ||
+                require("../../assets/images/A1/ac1.webp")
+              }
+              onAdd={() => handleAddToCart(item)}
+              onPressCard={() =>
+                router.push({
+                  pathname: "/(tabs)/productDetails",
+                  params: { productId: item.id },
+                })
+              }
+            />
+          ))}
         </View>
       </ScrollView>
 
-      {/* 🔥 Bottom Nav */}
-       <BottomNavBar />
+      <BottomNavBar />
     </View>
   );
 }
@@ -106,24 +134,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f5f5f5",
   },
-
-  appName: {
-    fontSize: 22,
-    color: "#FF5E22",
-    fontFamily: "Rancho_400Regular",
-    marginLeft: 110,
-  },
-
-  icons: {
-    flexDirection: "row",
-  },
-
-  image: {
+  coverImage: {
     width: "100%",
     height: 280,
     resizeMode: "cover",
   },
-
   title: {
     fontSize: 30,
     textAlign: "center",
@@ -131,37 +146,10 @@ const styles = StyleSheet.create({
     marginTop: 25,
     fontFamily: "Rancho_400Regular",
   },
-
   productsContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
     paddingHorizontal: 10,
-  },
-
-  bottomNav: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    height: 55,
-    borderTopWidth: 1,
-    borderColor: "#eee",
-    position: "absolute",
-    bottom: 0,
-    width: "100%",
-  },
-
-  centerLogo: {
-    backgroundColor: "#fff",
-    padding: 5,
-    borderRadius: 50,
-    marginTop: -4,
-  },
-
-  logoBottom: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
   },
 });
