@@ -1,15 +1,12 @@
 import { useRouter } from "expo-router";
-import React from "react";
 import { StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { auth } from "../../api/firebase";
-import CartHeader from "../../components/cart/CartHeader";
 import CartList from "../../components/cart/CartList";
 import CartSummary from "../../components/cart/CartSummary";
 import EmptyCart from "../../components/cart/EmptyCart";
-import BottomNavBar from '../../components/layout/BottomNavBar';
+import AppBar from "../../components/layout/AppBar";
+import BottomNavBar from "../../components/layout/BottomNavBar";
 import { useCart } from "../../hooks/useCart";
-import AppBar from '../../components/layout/AppBar';
 export default function CartScreen() {
   const router = useRouter();
 
@@ -43,7 +40,7 @@ export default function CartScreen() {
         </>
       )}
 
-     <BottomNavBar />
+      <BottomNavBar />
     </SafeAreaView>
   );
 }

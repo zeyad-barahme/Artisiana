@@ -1,11 +1,11 @@
-import CheckoutDetails from "@/components/checkout/CheckoutDetails";
+import PaymentScreen from "@/components/payment/PaymentScreen";
 import { StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-export default function Checkout() {
+export default function Payment() {
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
-      <CheckoutDetails />
+      <PaymentScreen />
     </SafeAreaView>
   );
 }

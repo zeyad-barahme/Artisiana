@@ -2,21 +2,30 @@ import {
   collection,
   deleteDoc,
   doc,
-  onSnapshot,
-  updateDoc,
-  setDoc, // أضفنا هذه للاستخدام في الإضافة
   getDoc,
+  onSnapshot,
+  setDoc,
+  updateDoc,
 } from "firebase/firestore";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { db } from "../api/firebase";
 
-type CartItem = {
+export type CartItem = {
   id: string;
   title: string;
   price: number;
   quantity: number;
-  image: string; // أضفنا الصورة لتخزينها
+  image: string;
 };
+
+function toNumber(value: unknown, fallback = 0) {
+  const numberValue =
+    typeof value === "string"
+      ? Number(value.replace(/[^0-9.]/g, ""))
+      : Number(value);
+
+  return Number.isFinite(numberValue) ? numberValue : fallback;
+}
 
 export function useCart() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -24,76 +33,128 @@ export function useCart() {
 
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, "cart"), (snapshot) => {
-      const items = snapshot.docs.map((docItem) => ({
-        id: docItem.id,
-        ...(docItem.data() as Omit<CartItem, "id">),
-      }));
+      const items = snapshot.docs.map((docItem) => {
+        const data = docItem.data();
+
+        return {
+          id: docItem.id,
+          title: String(data.title ?? ""),
+          price: toNumber(data.price, 0),
+          quantity: toNumber(data.quantity, 1),
+          image: String(data.image ?? ""),
+        };
+      });
+
       setCartItems(items);
     });
+
     return () => unsubscribe();
   }, []);
 
-  // --- دالة الإضافة الجديدة ---
-  const addToCart = async (product: any) => {
+  const addToCart = useCallback(async (product: any) => {
     try {
-      const cartRef = doc(db, "cart", product.id);
+      const productId = String(product.id);
+
+      const cartRef = doc(db, "cart", productId);
       const cartSnap = await getDoc(cartRef);
 
       if (cartSnap.exists()) {
-        // إذا المنتج موجود أصلاً، نزيد الكمية فقط
         await updateDoc(cartRef, {
-          quantity: cartSnap.data().quantity + 1
+          quantity: toNumber(cartSnap.data().quantity, 1) + 1,
         });
       } else {
-        // إذا المنتج جديد، نضيفه للسلة
         await setDoc(cartRef, {
           title: product.title,
-          price: product.price,
-          image: product.image,
-          quantity: 1
+          price: toNumber(product.price, 0),
+          image: String(product.image ?? ""),
+          quantity: 1,
         });
       }
     } catch (error) {
       console.error("Error adding to cart:", error);
     }
-  };
+  }, []);
 
-  const filteredItems = cartItems.filter((item) =>
-    item.title.toLowerCase().includes(search.toLowerCase()),
+  const filteredItems = useMemo(() => {
+    return cartItems.filter((item) =>
+      item.title.toLowerCase().includes(search.toLowerCase())
+    );
+  }, [cartItems, search]);
+
+  const total = useMemo(() => {
+    return cartItems.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    );
+  }, [cartItems]);
+
+  const totalItems = useMemo(() => {
+    return cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  }, [cartItems]);
+
+  const increaseQuantity = useCallback(
+    async (id: string) => {
+      const item = cartItems.find((i) => i.id === id);
+
+      if (!item) return;
+
+      const ref = doc(db, "cart", id);
+
+      await updateDoc(ref, {
+        quantity: item.quantity + 1,
+      });
+    },
+    [cartItems]
   );
 
-  const total = cartItems.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0,
+  const decreaseQuantity = useCallback(
+    async (id: string) => {
+      const item = cartItems.find((i) => i.id === id);
+
+      if (!item) return;
+
+      const ref = doc(db, "cart", id);
+
+      if (item.quantity <= 1) {
+        await deleteDoc(ref);
+        return;
+      }
+
+      await updateDoc(ref, {
+        quantity: item.quantity - 1,
+      });
+    },
+    [cartItems]
   );
 
-  const increaseQuantity = async (id: string) => {
-    const item = cartItems.find((i) => i.id === id);
-    if (!item) return;
-    const ref = doc(db, "cart", id);
-    await updateDoc(ref, { quantity: item.quantity + 1 });
-  };
-
-  const decreaseQuantity = async (id: string) => {
-    const item = cartItems.find((i) => i.id === id);
-    if (!item || item.quantity <= 1) return;
-    const ref = doc(db, "cart", id);
-    await updateDoc(ref, { quantity: item.quantity - 1 });
-  };
-
-  const deleteItem = async (id: string) => {
+  const deleteItem = useCallback(async (id: string) => {
     await deleteDoc(doc(db, "cart", id));
-  };
+  }, []);
+
+  const clearCart = useCallback(async () => {
+    await Promise.all(
+      cartItems.map((item) => deleteDoc(doc(db, "cart", item.id)))
+    );
+  }, [cartItems]);
 
   return {
     cartItems,
+    setCartItems,
+
     filteredItems,
+
     total,
+    totalPrice: total,
+    subtotal: total,
+    totalItems,
+
     search,
     setSearch,
+
+    addToCart,
     increaseQuantity,
     decreaseQuantity,
     deleteItem,
-    addToCart, // 🔥 تأكد من عمل return لها هنا
+    clearCart,
   };
 }

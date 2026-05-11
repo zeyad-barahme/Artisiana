@@ -1,5 +1,4 @@
 import { useRouter } from "expo-router";
-import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function CartSummary({ total }: any) {
@@ -8,12 +7,19 @@ export default function CartSummary({ total }: any) {
     <View style={styles.container}>
       <View style={styles.totalContainer}>
         <Text style={styles.totalText}>Total :</Text>
-        <Text style={styles.totalPrice}>${total}</Text>
+        <Text style={styles.totalPrice}>${total.toFixed(2)}</Text>
       </View>
 
       <TouchableOpacity
         style={styles.checkoutBtn}
-        onPress={() => router.push("/checkout")}
+        onPress={() =>
+          router.push({
+            pathname: "/checkout",
+            params: {
+              reset: Date.now().toString(),
+            },
+          } as any)
+        }
       >
         <Text style={styles.checkoutText}>Checkout</Text>
       </TouchableOpacity>

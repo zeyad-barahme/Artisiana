@@ -1,5 +1,4 @@
 import Feather from "@expo/vector-icons/Feather";
-import React from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 // 1. خريطة الصور المحلية (تأكد من مطابقة الأسماء والمسارات)
