@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 
 import ReviewScreenHeader from '@/components/reviews/review-screen-header';
 import ReviewScreenShell from '@/components/reviews/review-screen-shell';
 import StarRating from '@/components/reviews/star-rating';
 import type { AddReviewForm, ReviewPayload } from '@/components/reviews/types';
 import { createReview } from '@/services/reviews/reviews.service';
-import type { Href } from 'expo-router';
 
 const initialFormState: AddReviewForm = {
   rating: 0,
@@ -15,19 +14,35 @@ const initialFormState: AddReviewForm = {
 };
 
 export default function AddReview() {
-  const router = useRouter();
+  const params = useLocalSearchParams();
+
+  const productId = Array.isArray(params.productId)
+    ? params.productId[0]
+    : params.productId;
+
   const [form, setForm] = useState<AddReviewForm>(initialFormState);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChangeRating = (rating: number) => {
-    setForm((current) => ({ ...current, rating }));
+    setForm((current) => ({
+      ...current,
+      rating,
+    }));
   };
 
   const handleChangeComment = (comment: string) => {
-    setForm((current) => ({ ...current, comment }));
+    setForm((current) => ({
+      ...current,
+      comment,
+    }));
   };
 
   const handleSubmit = async () => {
+    if (!productId) {
+      Alert.alert('Product missing', 'Could not find the product for this review.');
+      return;
+    }
+
     if (form.rating === 0) {
       Alert.alert('Rating required', 'Please choose a rating before submitting your review.');
       return;
@@ -38,20 +53,19 @@ export default function AddReview() {
       rating: form.rating,
       comment: form.comment.trim(),
       createdAt: new Date().toISOString(),
+      productId: productId,
     };
 
     setIsSubmitting(true);
 
     try {
       await createReview(payload);
+
       setForm(initialFormState);
-      Alert.alert('Review submitted', 'Your review was saved successfully.', [
-        {
-          text: 'OK',
-          onPress: () => router.replace('/Reviews' as Href),
-        },
-      ]);
-    } catch {
+
+      Alert.alert('Review submitted', 'Your review was saved successfully.');
+    } catch (error) {
+      console.log('Error creating review:', error);
       Alert.alert('Submission failed', 'Could not save the review. Please try again.');
     } finally {
       setIsSubmitting(false);
@@ -63,6 +77,7 @@ export default function AddReview() {
       <ReviewScreenHeader />
 
       <Text style={styles.title}>Add Review</Text>
+
       <Text style={styles.subtitle}>Rate this product</Text>
 
       <StarRating
@@ -85,10 +100,16 @@ export default function AddReview() {
 
       <TouchableOpacity
         accessibilityRole="button"
-        style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
+        style={[
+          styles.submitButton,
+          isSubmitting && styles.submitButtonDisabled,
+        ]}
         onPress={handleSubmit}
-        disabled={isSubmitting}>
-        <Text style={styles.submitButtonText}>{isSubmitting ? 'saving...' : 'submit'}</Text>
+        disabled={isSubmitting}
+      >
+        <Text style={styles.submitButtonText}>
+          {isSubmitting ? 'saving...' : 'submit'}
+        </Text>
       </TouchableOpacity>
     </ReviewScreenShell>
   );

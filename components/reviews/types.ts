@@ -4,6 +4,7 @@ export type ReviewItem = {
   rating: number;
   comment: string;
   createdAt: string;
+  productId?: string;
   avatarColor: string;
   avatarLabel: string;
 };
@@ -24,4 +25,5 @@ export type ReviewPayload = {
   rating: number;
   comment: string;
   createdAt: string;
+  productId?: string;
 };
