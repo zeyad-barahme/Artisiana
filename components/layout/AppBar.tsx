@@ -1,21 +1,51 @@
+import { auth } from "@/api/firebase";
 import { useCart } from "@/hooks/useCart";
 import { Feather } from "@expo/vector-icons";
 import type { Href } from "expo-router";
 import { router } from "expo-router";
-import { useMemo } from "react";
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { signOut } from "firebase/auth";
+import { useMemo, useState } from "react";
+import {
+  Alert,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 export default function AppBar() {
   const { cartItems } = useCart();
+  const [loggingOut, setLoggingOut] = useState(false);
 
   const cartCount = useMemo(() => {
     return cartItems.reduce((sum, item) => sum + item.quantity, 0);
   }, [cartItems]);
 
+  const handleLogout = async () => {
+    Alert.alert("Logout", "Are you sure you want to logout?", [
+      { text: "Cancel", onPress: () => {}, style: "cancel" },
+      {
+        text: "Logout",
+        onPress: async () => {
+          try {
+            setLoggingOut(true);
+            await signOut(auth);
+            router.replace("/entry-gate" as Href);
+          } catch (error) {
+            Alert.alert("Error", "Failed to logout");
+            setLoggingOut(false);
+          }
+        },
+        style: "destructive",
+      },
+    ]);
+  };
+
   return (
     <View style={styles.wrapper}>
       <Image
-        source={require("../../assets/images/Logo.png")}
+        source={require("../../assets/images/logo.png")}
         style={styles.logoImage}
         resizeMode="contain"
       />
@@ -42,6 +72,14 @@ export default function AppBar() {
             <Text style={styles.cartBadgeText}>{cartCount}</Text>
           </View>
         )}
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.logoutButton}
+        onPress={handleLogout}
+        disabled={loggingOut}
+      >
+        <Feather name="log-out" size={22} color="#F47C48" />
       </TouchableOpacity>
     </View>
   );
@@ -127,5 +165,10 @@ const styles = StyleSheet.create({
 
   cartIcon: {
     fontSize: 24,
+  },
+
+  logoutButton: {
+    marginLeft: 12,
+    padding: 8,
   },
 });
