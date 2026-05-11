@@ -1,80 +1,133 @@
-import { View, Text, StyleSheet, Image, TouchableOpacity, ImageSourcePropType } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Dimensions } from 'react-native';
+
+const { width } = Dimensions.get('window');
+const CARD_WIDTH = (width - 48) / 2;
 
 type Props = {
+  id?: string;
   title: string;
   price: number;
-  image: ImageSourcePropType;
+  image: any;
   desc: string;
+  category?: string;
+  rating?: number;
   onAdd?: () => void;
   onPressCard?: () => void;
 };
 
-export default function ProductCard({ title, price, image, desc, onAdd, onPressCard }: Props) {
+export default function ProductCard({
+  title,
+  price,
+  image,
+  desc,
+  category,
+  rating,
+  onAdd,
+  onPressCard,
+}: Props) {
+  const stars = Math.round(rating || 5);
 
   return (
     <View style={styles.card}>
-
-      <TouchableOpacity onPress={onPressCard}>
-        <Image source={image} style={styles.image} />
+      <TouchableOpacity onPress={onPressCard} activeOpacity={0.85}>
+        <Image
+          source={typeof image === 'string' ? { uri: image } : image}
+          style={styles.image}
+          resizeMode="cover"
+        />
       </TouchableOpacity>
 
       <View style={styles.content}>
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.desc}>{desc}</Text>
-        <Text style={styles.rating}>⭐⭐⭐⭐⭐</Text>
+        <Text style={styles.title} numberOfLines={1}>
+          {title}
+        </Text>
+
+        {category && (
+          <Text style={styles.categoryText} numberOfLines={1}>
+            {category}
+          </Text>
+        )}
+
+        <Text style={styles.desc} numberOfLines={2}>
+          {desc}
+        </Text>
+
+        <Text style={styles.rating} numberOfLines={1}>
+          {'⭐'.repeat(stars)}
+        </Text>
       </View>
 
       <View style={styles.bottomRow}>
-        <Text style={styles.price}>${price}</Text>
+        <Text style={styles.price} numberOfLines={1}>
+          ${price}
+        </Text>
 
-        <TouchableOpacity style={styles.button} onPress={onAdd}>
-          <Text style={styles.buttonText}>Add To Cart</Text>
+        <TouchableOpacity style={styles.button} onPress={onAdd} activeOpacity={0.85}>
+          <Text style={styles.buttonText}>Add to Cart</Text>
         </TouchableOpacity>
       </View>
-
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
+    width: CARD_WIDTH,
+    height: 265,
     backgroundColor: '#fff',
-    borderRadius: 15,
+    borderRadius: 18,
     padding: 10,
-    width: '48%',
-    marginBottom: 20,
-    marginTop: 20,
-    height: 300,
+    marginBottom: 18,
+
     justifyContent: 'space-between',
+
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
   },
 
   image: {
     width: '100%',
-    height: 140,
-    borderRadius: 10,
+    height: 110,
+    borderRadius: 14,
+    backgroundColor: '#eee',
   },
 
   content: {
     flex: 1,
+    marginTop: 8,
   },
 
   title: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: 'bold',
-    marginTop: 10,
+    color: '#000',
+  },
+
+  categoryText: {
+    fontSize: 11,
+    color: '#FF5E22',
+    marginTop: 2,
+    fontWeight: '600',
   },
 
   desc: {
     fontSize: 12,
     color: '#777',
-    marginTop: 6,
+    marginTop: 5,
+    lineHeight: 16,
   },
 
   rating: {
-    color: '#FF5E22',
     fontSize: 12,
+    color: '#FF5E22',
     marginTop: 'auto',
-    marginBottom: 8,
+    marginBottom: 6,
   },
 
   bottomRow: {
@@ -86,17 +139,21 @@ const styles = StyleSheet.create({
   price: {
     color: '#FF5E22',
     fontWeight: 'bold',
+    fontSize: 15,
+    maxWidth: '38%',
   },
 
   button: {
     backgroundColor: '#FF5E22',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 12,
+    maxWidth: '62%',
   },
 
   buttonText: {
     color: '#fff',
-    fontSize: 12,
+    fontSize: 10,
+    fontWeight: '600',
   },
 });

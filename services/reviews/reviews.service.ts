@@ -18,6 +18,7 @@ type ReviewDocument = {
   rating?: number;
   comment?: string;
   createdAt?: string;
+  productId?: string;
 };
 
 function getAvatarLabel(userName: string) {
@@ -49,24 +50,30 @@ function mapReviewDocument(doc: QueryDocumentSnapshot<ReviewDocument>): ReviewIt
     rating: Math.max(0, Math.min(5, data.rating ?? 0)),
     comment: data.comment?.trim() ?? '',
     createdAt: data.createdAt ?? new Date(0).toISOString(),
+    productId: data.productId ?? '',
     avatarColor: getAvatarColor(doc.id),
     avatarLabel: getAvatarLabel(userName),
   };
 }
 
 export async function getReviews() {
-  const reviewsQuery = query(collection(db, REVIEWS_COLLECTION), orderBy('createdAt', 'desc'));
+  const reviewsQuery = query(
+    collection(db, REVIEWS_COLLECTION),
+    orderBy('createdAt', 'desc')
+  );
+
   const snapshot = await getDocs(reviewsQuery);
 
   return snapshot.docs.map(mapReviewDocument);
 }
 
 export async function createReview(payload: ReviewPayload) {
-  const reviewToCreate: Required<ReviewPayload> = {
+  const reviewToCreate = {
     userName: payload.userName?.trim() || 'Guest User',
     rating: payload.rating,
     comment: payload.comment.trim(),
     createdAt: payload.createdAt,
+    productId: payload.productId || '',
   };
 
   const docRef = await addDoc(collection(db, REVIEWS_COLLECTION), reviewToCreate);
