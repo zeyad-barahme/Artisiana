@@ -4,10 +4,10 @@ import {
   TextInput,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
   ScrollView,
   Alert,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { useRouter, type Href } from "expo-router";
