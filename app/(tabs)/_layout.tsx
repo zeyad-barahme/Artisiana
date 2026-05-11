@@ -3,13 +3,13 @@ import { Tabs } from "expo-router";
 export default function Layout() {
   return (
     <Tabs
-      initialRouteName="index"
+      initialRouteName="home"
       screenOptions={{
         headerShown: false,
         tabBarStyle: { display: "none" },
       }}
     >
-      <Tabs.Screen name="index" />
+      <Tabs.Screen name="home" />
       <Tabs.Screen name="search" />
       <Tabs.Screen name="explore" />
       <Tabs.Screen name="subscription" />
@@ -19,6 +19,8 @@ export default function Layout() {
       <Tabs.Screen name="accessories" />
       <Tabs.Screen name="checkout" />
       <Tabs.Screen name="payment" />
+      <Tabs.Screen name="productDetails" />
+      <Tabs.Screen name="success" />
     </Tabs>
   );
 }
