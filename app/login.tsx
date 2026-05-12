@@ -30,33 +30,47 @@ const loginSchema = z.object({
 
 export default function Login() {
   const router = useRouter();
+
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const {
     control,
     handleSubmit,
     formState: { errors },
   } = useForm<LoginForm>({
-    defaultValues: { email: "", password: "" },
+    defaultValues: {
+      email: "",
+      password: "",
+    },
     resolver: zodResolver(loginSchema),
   });
 
   const onSubmit = async (data: LoginForm) => {
-    try {
-      await signInWithEmailAndPassword(auth, data.email.trim(), data.password);
-      Alert.alert("Success", "Login successful 🎉");
-      router.push("/discover" as Href);
+    if (isLoading) return;
 
+    setIsLoading(true);
+
+    try {
+      await signInWithEmailAndPassword(
+        auth,
+        data.email.trim(),
+        data.password
+      );
+
+      Alert.alert("Success", "Login successful 🎉");
+      router.replace("/discover" as Href);
     } catch (e) {
-      console.log(e);
+      console.log("Login error:", e);
       Alert.alert("Error", "Invalid email or password");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        
         {/* Back */}
         <TouchableOpacity onPress={() => router.back()}>
           <Text style={styles.back}>←</Text>
@@ -81,12 +95,20 @@ export default function Login() {
             <View style={styles.inputContainer}>
               <TextInput
                 placeholder="Email"
+                placeholderTextColor="#B8B8B8"
                 style={styles.input}
                 value={value}
                 onChangeText={onChange}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                textContentType="emailAddress"
               />
+
               {errors.email && (
-                <Text style={styles.error}>{String(errors.email.message)}</Text>
+                <Text style={styles.error}>
+                  {String(errors.email.message)}
+                </Text>
               )}
             </View>
           )}
@@ -101,15 +123,21 @@ export default function Login() {
               <View style={styles.passwordBox}>
                 <TextInput
                   placeholder="Password"
+                  placeholderTextColor="#B8B8B8"
                   style={styles.inputFlex}
                   secureTextEntry={!showPassword}
                   value={value}
                   onChangeText={onChange}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  textContentType="password"
                 />
+
                 <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
                   <Text style={{ fontSize: 16 }}>👁</Text>
                 </TouchableOpacity>
               </View>
+
               {errors.password && (
                 <Text style={styles.error}>
                   {String(errors.password.message)}
@@ -125,8 +153,15 @@ export default function Login() {
         </TouchableOpacity>
 
         {/* Login Button */}
-        <TouchableOpacity style={styles.loginBtn} onPress={handleSubmit(onSubmit)}>
-          <Text style={styles.loginText}>Log in</Text>
+        <TouchableOpacity
+          style={styles.loginBtn}
+          onPress={handleSubmit(onSubmit)}
+          disabled={isLoading}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.loginText}>
+            {isLoading ? "Logging in..." : "Log in"}
+          </Text>
         </TouchableOpacity>
 
         {/* Signup redirect */}
@@ -139,7 +174,6 @@ export default function Login() {
             Sign up
           </Text>
         </Text>
-
       </ScrollView>
     </SafeAreaView>
   );
@@ -185,6 +219,7 @@ const styles = StyleSheet.create({
     padding: 15,
     borderWidth: 1,
     borderColor: "#ddd",
+    color: "#4A3F35",
   },
 
   passwordBox: {
@@ -200,6 +235,7 @@ const styles = StyleSheet.create({
   inputFlex: {
     flex: 1,
     paddingVertical: 15,
+    color: "#4A3F35",
   },
 
   forgot: {
