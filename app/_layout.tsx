@@ -62,7 +62,6 @@ export default function RootLayout() {
     <QueryClientProvider client={queryClientRef.current}>
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="entry-gate" />
-
         <Stack.Screen name="(tabs)" />
 
         <Stack.Screen name="login" />

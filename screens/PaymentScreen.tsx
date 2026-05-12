@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Alert, SafeAreaView, StyleSheet, Text, View, TextInput, Pressable } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import axios from 'axios';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import BackButton from '../components/BackButton';
-import { db } from '../api/firebase';
+import { app, auth } from '../api/firebase';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Payment'>;
 
@@ -12,6 +12,10 @@ type Errors = {
   cardNumber: string;
   expiry: string;
   cvc: string;
+};
+
+type FirestoreCreateDocumentResponse = {
+  name: string;
 };
 
 export default function PaymentScreen({ navigation, route }: Props) {
@@ -92,13 +96,37 @@ export default function PaymentScreen({ navigation, route }: Props) {
     try {
       console.log('Saving subscription...');
 
-      const docRef = await addDoc(collection(db, 'subscriptions'), {
-        plan: selectedPlan,
-        price: selectedPrice,
-        createdAt: serverTimestamp(),
-      });
+      const projectId = app.options.projectId;
+      const apiKey = app.options.apiKey;
 
-      console.log('Subscription saved with ID:', docRef.id);
+      if (!projectId || !apiKey) {
+        throw new Error('Firebase project configuration is missing.');
+      }
+
+      const idToken = auth.currentUser ? await auth.currentUser.getIdToken() : null;
+      const endpoint = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/subscriptions?key=${apiKey}`;
+
+      const response = await axios.post<FirestoreCreateDocumentResponse>(
+        endpoint,
+        {
+          fields: {
+            plan: { stringValue: selectedPlan },
+            price: { stringValue: selectedPrice },
+            createdAt: { timestampValue: new Date().toISOString() },
+          },
+        },
+        {
+          headers: idToken
+            ? {
+                Authorization: `Bearer ${idToken}`,
+              }
+            : undefined,
+        },
+      );
+
+      const documentId = response.data.name.split('/').pop();
+
+      console.log('Subscription saved with ID:', documentId);
       navigation.navigate('Success');
     } catch (error) {
       console.error('Failed to save subscription:', error);
