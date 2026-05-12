@@ -41,7 +41,9 @@ const signupSchema = z
 
 export default function Signup() {
   const router = useRouter();
+
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const {
     control,
@@ -60,7 +62,9 @@ export default function Signup() {
   });
 
   const onSubmit = async (data: SignupForm) => {
-    console.log("SUBMIT 🔥", data);
+    if (isLoading) return;
+
+    setIsLoading(true);
 
     try {
       const cred = await createUserWithEmailAndPassword(
@@ -68,32 +72,32 @@ export default function Signup() {
         data.email.trim(),
         data.password
       );
+
       await createUserProfile({
         uid: cred.user.uid,
-        name: data.name,
+        name: data.name.trim(),
         email: data.email.trim(),
-        phone: data.phone,
+        phone: data.phone.trim(),
       });
 
       Alert.alert("Success", "Account created successfully 🎉");
 
       reset();
-      router.push("/login" as Href);
-
+      router.replace("/discover" as Href);
     } catch (e) {
-      console.log("ERROR:", e);
+      console.log("Signup error:", e);
       Alert.alert("Error", "Signup failed. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        
         <Text style={styles.title}>Create an account</Text>
 
         <View style={styles.form}>
-          
           {/* Name */}
           <Controller
             control={control}
@@ -102,12 +106,18 @@ export default function Signup() {
               <View style={styles.inputContainer}>
                 <TextInput
                   placeholder="Name"
+                  placeholderTextColor="#B8B8B8"
                   style={styles.input}
                   value={value}
                   onChangeText={onChange}
+                  autoCapitalize="words"
+                  autoCorrect={false}
                 />
+
                 {errors.name && (
-                  <Text style={styles.error}>{String(errors.name.message)}</Text>
+                  <Text style={styles.error}>
+                    {String(errors.name.message)}
+                  </Text>
                 )}
               </View>
             )}
@@ -121,12 +131,16 @@ export default function Signup() {
               <View style={styles.inputContainer}>
                 <TextInput
                   placeholder="Email"
+                  placeholderTextColor="#B8B8B8"
                   style={styles.input}
                   keyboardType="email-address"
                   autoCapitalize="none"
+                  autoCorrect={false}
+                  textContentType="emailAddress"
                   value={value}
                   onChangeText={onChange}
                 />
+
                 {errors.email && (
                   <Text style={styles.error}>
                     {String(errors.email.message)}
@@ -144,13 +158,17 @@ export default function Signup() {
               <View style={styles.inputContainer}>
                 <TextInput
                   placeholder="Phone number"
+                  placeholderTextColor="#B8B8B8"
                   style={styles.input}
-                  keyboardType="numeric"
+                  keyboardType="phone-pad"
                   value={value}
                   onChangeText={onChange}
                 />
+
                 {errors.phone && (
-                  <Text style={styles.error}>{String(errors.phone.message)}</Text>
+                  <Text style={styles.error}>
+                    {String(errors.phone.message)}
+                  </Text>
                 )}
               </View>
             )}
@@ -165,17 +183,23 @@ export default function Signup() {
                 render={({ field: { onChange, value } }) => (
                   <TextInput
                     placeholder="Password"
+                    placeholderTextColor="#B8B8B8"
                     style={styles.inputFlex}
                     secureTextEntry={!showPassword}
                     value={value}
                     onChangeText={onChange}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    textContentType="newPassword"
                   />
                 )}
               />
+
               <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
                 <Text>👁</Text>
               </TouchableOpacity>
             </View>
+
             {errors.password && (
               <Text style={styles.error}>
                 {String(errors.password.message)}
@@ -191,11 +215,16 @@ export default function Signup() {
               <View style={styles.inputContainer}>
                 <TextInput
                   placeholder="Confirm password"
+                  placeholderTextColor="#B8B8B8"
                   style={styles.input}
                   secureTextEntry={!showPassword}
                   value={value}
                   onChangeText={onChange}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  textContentType="newPassword"
                 />
+
                 {errors.confirmPassword && (
                   <Text style={styles.error}>
                     {String(errors.confirmPassword.message)}
@@ -204,15 +233,18 @@ export default function Signup() {
               </View>
             )}
           />
-
         </View>
 
         {/* Signup Button */}
         <TouchableOpacity
           style={styles.signupBtn}
           onPress={handleSubmit(onSubmit)}
+          disabled={isLoading}
+          activeOpacity={0.8}
         >
-          <Text style={styles.signupText}>Sign up</Text>
+          <Text style={styles.signupText}>
+            {isLoading ? "Signing up..." : "Sign up"}
+          </Text>
         </TouchableOpacity>
 
         {/* Login */}
@@ -225,7 +257,6 @@ export default function Signup() {
             Log in
           </Text>
         </Text>
-
       </ScrollView>
     </SafeAreaView>
   );
@@ -260,6 +291,7 @@ const styles = StyleSheet.create({
     padding: 15,
     borderWidth: 1,
     borderColor: "#ddd",
+    color: "#4A3F35",
   },
 
   passwordBox: {
@@ -275,6 +307,7 @@ const styles = StyleSheet.create({
   inputFlex: {
     flex: 1,
     paddingVertical: 15,
+    color: "#4A3F35",
   },
 
   signupBtn: {

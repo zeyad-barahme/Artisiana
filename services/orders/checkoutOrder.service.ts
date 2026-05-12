@@ -2,8 +2,10 @@ import {
   collection,
   doc,
   getDocs,
+  query,
   serverTimestamp,
   setDoc,
+  where,
 } from "firebase/firestore";
 
 import { db } from "@/api/firebase";
@@ -11,7 +13,7 @@ import { db } from "@/api/firebase";
 const ORDERS_COLLECTION = "orders";
 const CART_COLLECTION = "cart";
 
-type CartOrderItem = {
+export type CartOrderItem = {
   id: string;
   title: string;
   price: number;
@@ -40,6 +42,19 @@ type CreateCheckoutOrderInput = {
   userId: string | null;
 };
 
+export type CheckoutOrder = {
+  id: string;
+  orderId: string;
+  userId: string | null;
+  total: number;
+  items: CartOrderItem[];
+  customer: CustomerDetails;
+  paymentInfo: PaymentInfo;
+  orderType: string;
+  status: string;
+  createdAt?: unknown;
+};
+
 export async function createCheckoutOrder({
   total,
   items,
@@ -64,8 +79,26 @@ export async function createCheckoutOrder({
   return orderRef.id;
 }
 
+export async function getOrdersByUser(userId: string): Promise<CheckoutOrder[]> {
+  const ordersQuery = query(
+    collection(db, ORDERS_COLLECTION),
+    where("userId", "==", userId)
+  );
+
+  const snapshot = await getDocs(ordersQuery);
+
+  const orders = snapshot.docs.map((orderDoc) => ({
+    id: orderDoc.id,
+    ...(orderDoc.data() as Omit<CheckoutOrder, "id">),
+  }));
+
+  return orders.reverse();
+}
+
 export async function clearCartItems() {
   const cartSnapshot = await getDocs(collection(db, CART_COLLECTION));
+
+  console.log("Cart items count:", cartSnapshot.size);
 
   // const deletePromises = cartSnapshot.docs.map((cartDoc) =>
   //   deleteDoc(doc(db, CART_COLLECTION, cartDoc.id)),
