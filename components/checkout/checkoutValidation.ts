@@ -62,10 +62,6 @@ export function validateAddressField(value: string): FieldValidationResult {
     return "Address is required.";
   }
 
-  if (/\d/.test(cleanValue)) {
-    return "Address must not contain numbers.";
-  }
-
   if (cleanValue.length < 3) {
     return "Address must be at least 3 characters.";
   }

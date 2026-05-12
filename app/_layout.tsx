@@ -1,3 +1,4 @@
+import { CartProvider } from "@/context/CartContext";
 import { Inter_400Regular } from "@expo-google-fonts/inter";
 import { Itim_400Regular } from "@expo-google-fonts/itim";
 import { Rancho_400Regular } from "@expo-google-fonts/rancho";
@@ -18,9 +19,11 @@ export default function RootLayout() {
   }
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="modal" options={{ presentation: "modal" }} />
-    </Stack>
+    <CartProvider>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="modal" options={{ presentation: "modal" }} />
+      </Stack>
+    </CartProvider>
   );
 }

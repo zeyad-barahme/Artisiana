@@ -2,15 +2,10 @@ import { useCart } from "@/hooks/useCart";
 import { Feather } from "@expo/vector-icons";
 import type { Href } from "expo-router";
 import { router } from "expo-router";
-import { useMemo } from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function AppBar() {
-  const { cartItems } = useCart();
-
-  const cartCount = useMemo(() => {
-    return cartItems.reduce((sum, item) => sum + item.quantity, 0);
-  }, [cartItems]);
+  const { totalItems } = useCart();
 
   return (
     <View style={styles.wrapper}>
@@ -37,9 +32,9 @@ export default function AppBar() {
       >
         <Feather name="shopping-cart" size={24} color="#FF7F50" />
 
-        {cartCount > 0 && (
+        {totalItems > 0 && (
           <View style={styles.cartBadge}>
-            <Text style={styles.cartBadgeText}>{cartCount}</Text>
+            <Text style={styles.cartBadgeText}>{totalItems}</Text>
           </View>
         )}
       </TouchableOpacity>
