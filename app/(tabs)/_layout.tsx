@@ -1,3 +1,4 @@
+import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Tabs } from "expo-router";
 
 export default function Layout() {
@@ -19,6 +20,17 @@ export default function Layout() {
       <Tabs.Screen name="accessories" />
       <Tabs.Screen name="checkout" />
       <Tabs.Screen name="payment" />
+
+      <Tabs.Screen
+        name="notifications"
+        options={{
+          title: "Notifications",
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={28} name="bell.fill" color={color} />
+          ),
+        }}
+      />
+
       <Tabs.Screen name="productDetails" />
       <Tabs.Screen name="success" />
     </Tabs>
