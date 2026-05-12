@@ -2,12 +2,104 @@ export type ValidationResult =
   | { isValid: true }
   | { isValid: false; title: string; message: string };
 
-type PaymentInput = {
+export type PaymentInput = {
   cardNumber: string;
   cardholderName: string;
   expireDate: string;
   cvc: string;
 };
+
+type FieldValidationResult = true | string;
+
+export function validateCardNumberField(value: string): FieldValidationResult {
+  const cleanValue = value.replace(/\s/g, "");
+
+  if (cleanValue === "") {
+    return "Card number is required.";
+  }
+
+  if (!/^\d+$/.test(cleanValue)) {
+    return "Card number must contain numbers only.";
+  }
+
+  if (cleanValue.length < 13) {
+    return "Card number must be at least 13 digits.";
+  }
+
+  if (cleanValue.length > 19) {
+    return "Card number must not be more than 19 digits.";
+  }
+
+  return true;
+}
+
+export function validateCardholderNameField(
+  value: string,
+): FieldValidationResult {
+  const cleanValue = value.trim();
+
+  if (cleanValue === "") {
+    return "Cardholder name is required.";
+  }
+
+  if (/\d/.test(cleanValue)) {
+    return "Cardholder name must not contain numbers.";
+  }
+
+  if (cleanValue.length < 7) {
+    return "Cardholder name must be at least 7 characters.";
+  }
+
+  if (cleanValue.length > 36) {
+    return "Cardholder name must not be more than 36 characters.";
+  }
+
+  return true;
+}
+
+export function validateExpireDateField(value: string): FieldValidationResult {
+  const cleanValue = value.trim();
+
+  if (cleanValue === "") {
+    return "Expire date is required.";
+  }
+
+  if (!/^\d{2}\/\d{2}$/.test(cleanValue)) {
+    return "Expire date must be in MM/YY format.";
+  }
+
+  const [monthText, yearText] = cleanValue.split("/");
+  const month = Number(monthText);
+  const year = Number(yearText);
+
+  if (month < 1 || month > 12) {
+    return "Month must be between 01 and 12.";
+  }
+
+  const currentDate = new Date();
+  const currentYear = currentDate.getFullYear() % 100;
+  const currentMonth = currentDate.getMonth() + 1;
+
+  if (year < currentYear || (year === currentYear && month < currentMonth)) {
+    return "Card has expired.";
+  }
+
+  return true;
+}
+
+export function validateCvcField(value: string): FieldValidationResult {
+  const cleanValue = value.trim();
+
+  if (cleanValue === "") {
+    return "CVC is required.";
+  }
+
+  if (!/^\d{3,4}$/.test(cleanValue)) {
+    return "CVC must be 3 or 4 digits.";
+  }
+
+  return true;
+}
 
 export function validatePaymentDetails({
   cardNumber,
@@ -33,91 +125,43 @@ export function validatePaymentDetails({
     };
   }
 
-  if (!/^\d+$/.test(cleanCardNumber)) {
+  const cardNumberError = validateCardNumberField(cardNumber);
+
+  if (cardNumberError !== true) {
     return {
       isValid: false,
       title: "Invalid Card Number",
-      message: "Card number must contain numbers only.",
+      message: cardNumberError,
     };
   }
 
-  if (cleanCardNumber.length < 13) {
-    return {
-      isValid: false,
-      title: "Invalid Card Number",
-      message: "Card number must be at least 13 digits.",
-    };
-  }
+  const cardholderNameError = validateCardholderNameField(cardholderName);
 
-  if (cleanCardNumber.length > 19) {
-    return {
-      isValid: false,
-      title: "Invalid Card Number",
-      message: "Card number must not be more than 19 digits.",
-    };
-  }
-
-  if (/\d/.test(cleanCardholderName)) {
+  if (cardholderNameError !== true) {
     return {
       isValid: false,
       title: "Invalid Cardholder Name",
-      message: "Cardholder name must not contain numbers.",
+      message: cardholderNameError,
     };
   }
 
-  if (cleanCardholderName.length < 7) {
-    return {
-      isValid: false,
-      title: "Invalid Cardholder Name",
-      message: "Cardholder name must be at least 7 characters.",
-    };
-  }
+  const expireDateError = validateExpireDateField(expireDate);
 
-  if (cleanCardholderName.length > 36) {
-    return {
-      isValid: false,
-      title: "Invalid Cardholder Name",
-      message: "Cardholder name must not be more than 36 characters.",
-    };
-  }
-
-  if (!/^\d{2}\/\d{2}$/.test(cleanExpireDate)) {
+  if (expireDateError !== true) {
     return {
       isValid: false,
       title: "Invalid Expire Date",
-      message: "Expire date must be in MM/YY format.",
+      message: expireDateError,
     };
   }
 
-  const [monthText, yearText] = cleanExpireDate.split("/");
-  const month = Number(monthText);
-  const year = Number(yearText);
+  const cvcError = validateCvcField(cvc);
 
-  if (month < 1 || month > 12) {
-    return {
-      isValid: false,
-      title: "Invalid Expire Date",
-      message: "Month must be between 01 and 12.",
-    };
-  }
-
-  const currentDate = new Date();
-  const currentYear = currentDate.getFullYear() % 100;
-  const currentMonth = currentDate.getMonth() + 1;
-
-  if (year < currentYear || (year === currentYear && month < currentMonth)) {
-    return {
-      isValid: false,
-      title: "Invalid Expire Date",
-      message: "Card has expired.",
-    };
-  }
-
-  if (!/^\d{3,4}$/.test(cleanCvc)) {
+  if (cvcError !== true) {
     return {
       isValid: false,
       title: "Invalid CVC",
-      message: "CVC must be 3 or 4 digits.",
+      message: cvcError,
     };
   }
 
