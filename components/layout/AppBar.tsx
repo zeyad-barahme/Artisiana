@@ -15,7 +15,7 @@ export default function AppBar() {
         resizeMode="contain"
       />
 
-      <Text style={styles.brandName}>Artisiana</Text>
+      <Text style={styles.brandName}>Artestiana</Text>
 
       <TouchableOpacity
         style={styles.searchBox}
