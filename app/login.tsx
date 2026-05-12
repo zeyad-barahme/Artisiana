@@ -1,0 +1,276 @@
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  ScrollView,
+  Alert,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useState } from "react";
+import { useForm, Controller } from "react-hook-form";
+import { useRouter, type Href } from "expo-router";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+
+import { auth } from "@/api/firebase";
+
+type LoginForm = {
+  email: string;
+  password: string;
+};
+
+const loginSchema = z.object({
+  email: z.string().min(1, "Email is required").email("Invalid email"),
+  password: z.string().min(1, "Password is required"),
+});
+
+export default function Login() {
+  const router = useRouter();
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginForm>({
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+    resolver: zodResolver(loginSchema),
+  });
+
+  const onSubmit = async (data: LoginForm) => {
+    if (isLoading) return;
+
+    setIsLoading(true);
+
+    try {
+      await signInWithEmailAndPassword(
+        auth,
+        data.email.trim(),
+        data.password
+      );
+
+      Alert.alert("Success", "Login successful 🎉");
+      router.replace("/discover" as Href);
+    } catch (e) {
+      console.log("Login error:", e);
+      Alert.alert("Error", "Invalid email or password");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {/* Back */}
+        <TouchableOpacity onPress={() => router.back()}>
+          <Text style={styles.back}>←</Text>
+        </TouchableOpacity>
+
+        {/* Image */}
+        <Image
+          source={require("../assets/images/login.png")}
+          style={styles.image}
+          resizeMode="contain"
+        />
+
+        {/* Titles */}
+        <Text style={styles.title}>Welcome back 👋</Text>
+        <Text style={styles.subtitle}>Login to your account</Text>
+
+        {/* Email */}
+        <Controller
+          control={control}
+          name="email"
+          render={({ field: { onChange, value } }) => (
+            <View style={styles.inputContainer}>
+              <TextInput
+                placeholder="Email"
+                placeholderTextColor="#B8B8B8"
+                style={styles.input}
+                value={value}
+                onChangeText={onChange}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                textContentType="emailAddress"
+              />
+
+              {errors.email && (
+                <Text style={styles.error}>
+                  {String(errors.email.message)}
+                </Text>
+              )}
+            </View>
+          )}
+        />
+
+        {/* Password */}
+        <Controller
+          control={control}
+          name="password"
+          render={({ field: { onChange, value } }) => (
+            <View style={styles.inputContainer}>
+              <View style={styles.passwordBox}>
+                <TextInput
+                  placeholder="Password"
+                  placeholderTextColor="#B8B8B8"
+                  style={styles.inputFlex}
+                  secureTextEntry={!showPassword}
+                  value={value}
+                  onChangeText={onChange}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  textContentType="password"
+                />
+
+                <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                  <Text style={{ fontSize: 16 }}>👁</Text>
+                </TouchableOpacity>
+              </View>
+
+              {errors.password && (
+                <Text style={styles.error}>
+                  {String(errors.password.message)}
+                </Text>
+              )}
+            </View>
+          )}
+        />
+
+        {/* Forgot */}
+        <TouchableOpacity>
+          <Text style={styles.forgot}>Forgot Password?</Text>
+        </TouchableOpacity>
+
+        {/* Login Button */}
+        <TouchableOpacity
+          style={styles.loginBtn}
+          onPress={handleSubmit(onSubmit)}
+          disabled={isLoading}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.loginText}>
+            {isLoading ? "Logging in..." : "Log in"}
+          </Text>
+        </TouchableOpacity>
+
+        {/* Signup redirect */}
+        <Text style={styles.signupText}>
+          Don’t have an account?{" "}
+          <Text
+            style={styles.signupLink}
+            onPress={() => router.push("/signup" as Href)}
+          >
+            Sign up
+          </Text>
+        </Text>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#F2F2F2",
+    paddingHorizontal: 20,
+  },
+
+  back: {
+    fontSize: 24,
+    marginTop: 10,
+  },
+
+  image: {
+    width: "100%",
+    height: 220,
+    marginVertical: 10,
+  },
+
+  title: {
+    fontSize: 26,
+    fontWeight: "700",
+    color: "#4A3F35",
+    marginBottom: 5,
+  },
+
+  subtitle: {
+    color: "#777",
+    marginBottom: 25,
+  },
+
+  inputContainer: {
+    marginBottom: 15,
+  },
+
+  input: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 15,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    color: "#4A3F35",
+  },
+
+  passwordBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    paddingHorizontal: 15,
+    borderWidth: 1,
+    borderColor: "#ddd",
+  },
+
+  inputFlex: {
+    flex: 1,
+    paddingVertical: 15,
+    color: "#4A3F35",
+  },
+
+  forgot: {
+    alignSelf: "flex-end",
+    marginBottom: 25,
+    color: "#F47C4C",
+    fontWeight: "500",
+  },
+
+  loginBtn: {
+    backgroundColor: "#F47C4C",
+    padding: 18,
+    borderRadius: 30,
+    alignItems: "center",
+  },
+
+  loginText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+
+  signupText: {
+    textAlign: "center",
+    marginTop: 20,
+  },
+
+  signupLink: {
+    fontWeight: "bold",
+    color: "#F47C4C",
+  },
+
+  error: {
+    color: "red",
+    fontSize: 12,
+    marginTop: 5,
+  },
+});
