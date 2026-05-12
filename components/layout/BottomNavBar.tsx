@@ -6,17 +6,18 @@ import { Image, StyleSheet, TouchableOpacity, View } from "react-native";
 export default function BottomNavBar() {
   const pathname = usePathname();
 
-  const isHome = pathname === "/(tabs)" || pathname === "/(tabs)/index";
+  const isHome = pathname === "/(tabs)/home";
   const isExplore = pathname === "/(tabs)/explore";
+  const isProfile = pathname === "/profile";
 
   return (
     <View style={styles.wrapper}>
       <TouchableOpacity
         style={styles.iconButton}
-        onPress={() => router.push("/(tabs)" as Href)}
+        onPress={() => router.push("/(tabs)/home" as Href)}
         activeOpacity={0.8}
       >
-        <Feather name="home" size={22} color={isHome ? "#F47C48" : "#F47C48"} />
+        <Feather name="home" size={22} color={isHome ? "#F47C48" : "#C9AFA0"} />
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -27,7 +28,7 @@ export default function BottomNavBar() {
         <Ionicons
           name="grid-outline"
           size={22}
-          color={isExplore ? "#F47C48" : "#F47C48"}
+          color={isExplore ? "#F47C48" : "#C9AFA0"}
         />
       </TouchableOpacity>
 
@@ -40,11 +41,19 @@ export default function BottomNavBar() {
       </View>
 
       <TouchableOpacity style={styles.iconButton} activeOpacity={0.8}>
-        <Feather name="bell" size={21} color="#F47C48" />
+        <Feather name="bell" size={21} color="#C9AFA0" />
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.iconButton} activeOpacity={0.8}>
-        <Feather name="user" size={21} color="#F47C48" />
+      <TouchableOpacity
+        style={styles.iconButton}
+        activeOpacity={0.8}
+        onPress={() => router.push("/profile" as Href)}
+      >
+        <Feather
+          name="user"
+          size={21}
+          color={isProfile ? "#F47C48" : "#C9AFA0"}
+        />
       </TouchableOpacity>
     </View>
   );
