@@ -1,14 +1,52 @@
+import { db } from "@/api/firebase";
+import { useAuth } from "@/hooks/useAuth";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import type { Href } from "expo-router";
 import { router, usePathname } from "expo-router";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { useEffect, useState } from "react";
 import { Image, StyleSheet, TouchableOpacity, View } from "react-native";
 
 export default function BottomNavBar() {
   const pathname = usePathname();
+  const { user, isLoading } = useAuth();
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const isHome = pathname === "/(tabs)/home";
   const isExplore = pathname === "/(tabs)/explore";
+  const isNotifications = pathname === "/(tabs)/notifications";
   const isProfile = pathname === "/profile";
+  const hasUnreadNotifications = unreadCount > 0;
+
+  useEffect(() => {
+    if (isLoading) {
+      return;
+    }
+
+    if (!user) {
+      setUnreadCount(0);
+      return;
+    }
+
+    const unreadNotificationsQuery = query(
+      collection(db, "notifications"),
+      where("userId", "==", user.uid),
+      where("isRead", "==", false)
+    );
+
+    const unsubscribe = onSnapshot(
+      unreadNotificationsQuery,
+      (snapshot) => {
+        setUnreadCount(snapshot.size);
+      },
+      (error) => {
+        console.error("Failed to listen for unread notifications:", error);
+        setUnreadCount(0);
+      }
+    );
+
+    return unsubscribe;
+  }, [isLoading, user]);
 
   return (
     <View style={styles.wrapper}>
@@ -34,14 +72,23 @@ export default function BottomNavBar() {
 
       <View style={styles.logoCircle}>
         <Image
-          source={require("../../assets/images/Logo.png")}
+          source={require("../../assets/images/brand-logo.png")}
           style={styles.centerLogo}
           resizeMode="contain"
         />
       </View>
 
-      <TouchableOpacity style={styles.iconButton} activeOpacity={0.8}>
-        <Feather name="bell" size={21} color="#C9AFA0" />
+      <TouchableOpacity
+        style={styles.iconButton}
+        activeOpacity={0.8}
+        onPress={() => router.push("/(tabs)/notifications" as Href)}
+      >
+        <Feather
+          name="bell"
+          size={21}
+          color={isNotifications ? "#F47C48" : "#C9AFA0"}
+        />
+        {hasUnreadNotifications ? <View style={styles.notificationDot} /> : null}
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -91,5 +138,16 @@ const styles = StyleSheet.create({
   centerLogo: {
     width: 32,
     height: 32,
+  },
+  notificationDot: {
+    position: "absolute",
+    right: 8,
+    top: 7,
+    width: 9,
+    height: 9,
+    borderRadius: 5,
+    backgroundColor: "#FF4D4D",
+    borderWidth: 1.5,
+    borderColor: "#FFFFFF",
   },
 });
