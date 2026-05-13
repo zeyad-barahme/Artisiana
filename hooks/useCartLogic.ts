@@ -1,17 +1,22 @@
+import { auth, db } from "@/api/firebase";
+import { onAuthStateChanged } from "firebase/auth";
 import {
-    collection,
-    deleteDoc,
-    doc,
-    getDoc,
-    onSnapshot,
-    setDoc,
-    updateDoc,
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  onSnapshot,
+  query,
+  setDoc,
+  updateDoc,
+  where,
 } from "firebase/firestore";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { db } from "../api/firebase";
 
 export type CartItem = {
   id: string;
+  productId: string;
+  userId: string;
   title: string;
   price: number;
   quantity: number;
@@ -29,57 +34,93 @@ function toNumber(value: unknown, fallback = 0) {
 
 export function useCartLogic() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [search, setSearch] = useState("");
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, "cart"), (snapshot) => {
-      const items = snapshot.docs.map((docItem) => {
-        const data = docItem.data();
+    let unsubscribeCart: (() => void) | undefined;
 
-        return {
-          id: docItem.id,
-          title: String(data.title ?? ""),
-          price: toNumber(data.price, 0),
-          quantity: toNumber(data.quantity, 1),
-          image: String(data.image ?? ""),
-        };
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+      if (unsubscribeCart) {
+        unsubscribeCart();
+      }
+
+      if (!user) {
+        setUserId(null);
+        setCartItems([]);
+        return;
+      }
+
+      setUserId(user.uid);
+
+      const cartQuery = query(
+        collection(db, "cart"),
+        where("userId", "==", user.uid),
+      );
+
+      unsubscribeCart = onSnapshot(cartQuery, (snapshot) => {
+        const items = snapshot.docs.map((docItem) => {
+          const data = docItem.data();
+
+          return {
+            id: docItem.id,
+            productId: String(data.productId ?? docItem.id),
+            userId: String(data.userId ?? ""),
+            title: String(data.title ?? ""),
+            price: toNumber(data.price, 0),
+            quantity: toNumber(data.quantity, 1),
+            image: String(data.image ?? ""),
+          };
+        });
+
+        setCartItems(items);
       });
-
-      setCartItems(items);
     });
 
-    return () => unsubscribe();
-  }, []);
+    return () => {
+      unsubscribeAuth();
 
-  const addToCart = useCallback(async (product: any) => {
-    try {
-      const productId = String(product.id);
-
-      const cartRef = doc(db, "cart", productId);
-      const cartSnap = await getDoc(cartRef);
-
-      if (cartSnap.exists()) {
-        await updateDoc(cartRef, {
-          quantity: toNumber(cartSnap.data().quantity, 1) + 1,
-        });
-      } else {
-        await setDoc(cartRef, {
-          title: product.title,
-          price: toNumber(product.price, 0),
-          image: String(product.image ?? ""),
-          quantity: 1,
-        });
+      if (unsubscribeCart) {
+        unsubscribeCart();
       }
-    } catch (error) {
-      console.error("Error adding to cart:", error);
-    }
+    };
   }, []);
 
-  const filteredItems = useMemo(() => {
-    return cartItems.filter((item) =>
-      item.title.toLowerCase().includes(search.toLowerCase()),
-    );
-  }, [cartItems, search]);
+  const addToCart = useCallback(
+    async (product: any) => {
+      try {
+        if (!userId) {
+          console.log("User must be logged in to add items to cart.");
+          return;
+        }
+
+        const productId = String(product.id);
+        const cartDocId = `${userId}_${productId}`;
+
+        const cartRef = doc(db, "cart", cartDocId);
+        const cartSnap = await getDoc(cartRef);
+
+        if (cartSnap.exists()) {
+          await updateDoc(cartRef, {
+            quantity: toNumber(cartSnap.data().quantity, 1) + 1,
+          });
+        } else {
+          await setDoc(cartRef, {
+            productId,
+            userId,
+            title: product.title,
+            price: toNumber(product.price, 0),
+            image: String(product.image ?? ""),
+            quantity: 1,
+          });
+        }
+      } catch (error) {
+        console.error("Error adding to cart:", error);
+      }
+    },
+    [userId],
+  );
+
+  const filteredItems = cartItems;
 
   const total = useMemo(() => {
     return cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -139,9 +180,6 @@ export function useCartLogic() {
     totalPrice: total,
     subtotal: total,
     totalItems,
-
-    search,
-    setSearch,
 
     addToCart,
     increaseQuantity,

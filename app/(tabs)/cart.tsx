@@ -9,8 +9,6 @@ import BottomNavBar from "../../components/layout/BottomNavBar";
 import { useCart } from "../../hooks/useCart";
 
 export default function CartScreen() {
-  const router = useRouter();
-
   const {
     filteredItems,
     total,
