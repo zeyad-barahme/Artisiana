@@ -1,5 +1,5 @@
 import Feather from "@expo/vector-icons/Feather";
-import { useRouter } from "expo-router";
+import { useRouter, type Href } from "expo-router";
 import React from "react";
 import { Image, StyleSheet, TouchableOpacity, View } from "react-native";
 
@@ -17,12 +17,12 @@ export default function BottomNav() {
 
       <View style={styles.centerLogo}>
         <Image
-          source={require('../../assets/images/logo.png')}
+          source={require("../../assets/images/brand-logo.png")}
           style={styles.logo}
         />
       </View>
 
-      <TouchableOpacity onPress={() => router.push("/checkout")}>
+      <TouchableOpacity onPress={() => router.push("/(tabs)/notifications" as Href)}>
         <Feather name="bell" size={24} color="#FF7F50" />
       </TouchableOpacity>
 

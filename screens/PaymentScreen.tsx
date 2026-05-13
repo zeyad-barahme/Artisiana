@@ -13,6 +13,7 @@ import axios from "axios";
 import { RootStackParamList } from "../navigation/AppNavigator";
 import BackButton from "../components/BackButton";
 import { app, auth } from "../api/firebase";
+import { notifySubscriptionActivated } from "../services/notifications/notification.service";
 import { updateUserProfile } from "../services/user-profile";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Payment">;
@@ -155,6 +156,12 @@ export default function PaymentScreen({ navigation, route }: Props) {
       } as any);
 
       console.log("User subscription plan updated:", selectedPlan);
+
+      await notifySubscriptionActivated({
+        userId: uid,
+        plan: selectedPlan,
+        subscriptionId: documentId ?? "",
+      });
 
       navigation.navigate("Success", {
         selectedPlan,
