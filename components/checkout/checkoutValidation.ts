@@ -1,7 +1,3 @@
-export type ValidationResult =
-  | { isValid: true }
-  | { isValid: false; title: string; message: string };
-
 type CheckoutDetailsInput = {
   fullName: string;
   phoneNumber: string;
@@ -85,73 +81,6 @@ export function validateCityField(value: string): FieldValidationResult {
   }
 
   return true;
-}
-
-export function validateCheckoutDetails({
-  fullName,
-  phoneNumber,
-  address,
-  city,
-}: CheckoutDetailsInput): ValidationResult {
-  const cleanFullName = fullName.trim();
-  const cleanPhoneNumber = phoneNumber.trim();
-  const cleanAddress = address.trim();
-  const cleanCity = city.trim();
-
-  if (
-    cleanFullName === "" ||
-    cleanPhoneNumber === "" ||
-    cleanAddress === "" ||
-    cleanCity === ""
-  ) {
-    return {
-      isValid: false,
-      title: "Missing Information",
-      message: "Please fill in all fields.",
-    };
-  }
-
-  const fullNameError = validateFullNameField(fullName);
-
-  if (fullNameError !== true) {
-    return {
-      isValid: false,
-      title: "Invalid Full Name",
-      message: fullNameError,
-    };
-  }
-
-  const phoneNumberError = validatePhoneNumberField(phoneNumber);
-
-  if (phoneNumberError !== true) {
-    return {
-      isValid: false,
-      title: "Invalid Phone Number",
-      message: phoneNumberError,
-    };
-  }
-
-  const addressError = validateAddressField(address);
-
-  if (addressError !== true) {
-    return {
-      isValid: false,
-      title: "Invalid Address",
-      message: addressError,
-    };
-  }
-
-  const cityError = validateCityField(city);
-
-  if (cityError !== true) {
-    return {
-      isValid: false,
-      title: "Invalid City",
-      message: cityError,
-    };
-  }
-
-  return { isValid: true };
 }
 
 export function cleanCheckoutDetails({

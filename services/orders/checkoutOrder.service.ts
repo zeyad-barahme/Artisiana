@@ -11,7 +11,6 @@ import {
 import { db } from "@/api/firebase";
 
 const ORDERS_COLLECTION = "orders";
-const CART_COLLECTION = "cart";
 
 export type CartOrderItem = {
   id: string;
@@ -79,10 +78,12 @@ export async function createCheckoutOrder({
   return orderRef.id;
 }
 
-export async function getOrdersByUser(userId: string): Promise<CheckoutOrder[]> {
+export async function getOrdersByUser(
+  userId: string,
+): Promise<CheckoutOrder[]> {
   const ordersQuery = query(
     collection(db, ORDERS_COLLECTION),
-    where("userId", "==", userId)
+    where("userId", "==", userId),
   );
 
   const snapshot = await getDocs(ordersQuery);
@@ -93,16 +94,4 @@ export async function getOrdersByUser(userId: string): Promise<CheckoutOrder[]> 
   }));
 
   return orders.reverse();
-}
-
-export async function clearCartItems() {
-  const cartSnapshot = await getDocs(collection(db, CART_COLLECTION));
-
-  console.log("Cart items count:", cartSnapshot.size);
-
-  // const deletePromises = cartSnapshot.docs.map((cartDoc) =>
-  //   deleteDoc(doc(db, CART_COLLECTION, cartDoc.id)),
-  // );
-
-  // await Promise.all(deletePromises);
 }
