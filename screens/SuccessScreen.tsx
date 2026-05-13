@@ -1,24 +1,20 @@
 ﻿import React from 'react';
 import { SafeAreaView, StyleSheet, Text, View, Pressable } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { router } from 'expo-router';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import BackButton from '../components/BackButton';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Success'>;
 
-export default function SuccessScreen({ navigation }: Props) {
+export default function SuccessScreen({ navigation: _navigation }: Props) {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
         <View style={styles.header}>
           <View style={styles.backButton}>
             <BackButton
-              onPress={() =>
-                navigation.reset({
-                  index: 0,
-                  routes: [{ name: 'SubscriptionPlans' }],
-                })
-              }
+              onPress={() => router.replace('/(tabs)/home' as any)}
             />
           </View>
           <Text style={styles.title}>Success</Text>
@@ -34,12 +30,7 @@ export default function SuccessScreen({ navigation }: Props) {
 
         <Pressable
           style={styles.button}
-          onPress={() =>
-            navigation.reset({
-              index: 0,
-              routes: [{ name: 'SubscriptionPlans' }],
-            })
-          }
+          onPress={() => router.replace('/(tabs)/home' as any)}
         >
           <Text style={styles.buttonText}>Done</Text>
         </Pressable>
