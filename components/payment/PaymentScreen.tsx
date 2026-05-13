@@ -25,7 +25,7 @@ function PaymentContent({
   address,
   city,
 }: PaymentContentProps) {
-  const { total, cartItems } = useCart();
+  const { total, cartItems, clearCart } = useCart();
   const router = useRouter();
 
   const [isSaving, setIsSaving] = useState(false);
@@ -72,6 +72,8 @@ function PaymentContent({
     setIsSaving(true);
 
     try {
+      const orderTotal = total;
+
       const orderItems = cartItems.map((item) => ({
         id: item.id,
         title: item.title,
@@ -81,7 +83,7 @@ function PaymentContent({
       }));
 
       await createCheckoutOrder({
-        total,
+        total: orderTotal,
         items: orderItems,
         customer: {
           fullName,
@@ -97,9 +99,14 @@ function PaymentContent({
         userId: auth.currentUser?.uid ?? null,
       });
 
-      // await clearCartItems();
+      await clearCart();
 
-      router.replace("/success");
+      router.replace({
+        pathname: "/success",
+        params: {
+          total: orderTotal.toString(),
+        },
+      } as any);
     } catch (error) {
       console.error("Failed to save order:", error);
 

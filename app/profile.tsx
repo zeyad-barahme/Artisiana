@@ -243,6 +243,7 @@ export default function Profile() {
   }
 
   const userInitial = user.name?.charAt(0)?.toUpperCase() || "U";
+  const subscriptionPlan = (user as any).subscriptionPlan || "Basic";
 
   return (
     <SafeAreaView style={styles.container}>
@@ -341,7 +342,7 @@ export default function Profile() {
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Subscription</Text>
-            <Text style={styles.sectionText}>Plan : Basic</Text>
+            <Text style={styles.sectionText}>Plan : {subscriptionPlan}</Text>
 
             <TouchableOpacity
               style={styles.smallBtn}

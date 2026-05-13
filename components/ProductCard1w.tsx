@@ -1,12 +1,20 @@
-import { View, Text, StyleSheet, Image, TouchableOpacity, Dimensions } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  TouchableOpacity,
+  Dimensions,
+} from "react-native";
 
-const { width } = Dimensions.get('window');
+const { width } = Dimensions.get("window");
 const CARD_WIDTH = (width - 48) / 2;
 
 type Props = {
   id?: string;
   title: string;
   price: number;
+  oldPrice?: number;
   image: any;
   desc: string;
   category?: string;
@@ -18,6 +26,7 @@ type Props = {
 export default function ProductCard({
   title,
   price,
+  oldPrice,
   image,
   desc,
   category,
@@ -26,12 +35,13 @@ export default function ProductCard({
   onPressCard,
 }: Props) {
   const stars = Math.round(rating || 5);
+  const hasOldPrice = typeof oldPrice === "number" && oldPrice > price;
 
   return (
     <View style={styles.card}>
       <TouchableOpacity onPress={onPressCard} activeOpacity={0.85}>
         <Image
-          source={typeof image === 'string' ? { uri: image } : image}
+          source={typeof image === "string" ? { uri: image } : image}
           style={styles.image}
           resizeMode="cover"
         />
@@ -53,16 +63,28 @@ export default function ProductCard({
         </Text>
 
         <Text style={styles.rating} numberOfLines={1}>
-          {'⭐'.repeat(stars)}
+          {"⭐".repeat(stars)}
         </Text>
       </View>
 
       <View style={styles.bottomRow}>
-        <Text style={styles.price} numberOfLines={1}>
-          ${price}
-        </Text>
+        <View style={styles.priceBox}>
+          {hasOldPrice && (
+            <Text style={styles.oldPrice} numberOfLines={1}>
+              ${oldPrice.toFixed(2)}
+            </Text>
+          )}
 
-        <TouchableOpacity style={styles.button} onPress={onAdd} activeOpacity={0.85}>
+          <Text style={styles.price} numberOfLines={1}>
+            ${price.toFixed(2)}
+          </Text>
+        </View>
+
+        <TouchableOpacity
+          style={styles.button}
+          onPress={onAdd}
+          activeOpacity={0.85}
+        >
           <Text style={styles.buttonText}>Add to Cart</Text>
         </TouchableOpacity>
       </View>
@@ -74,15 +96,15 @@ const styles = StyleSheet.create({
   card: {
     width: CARD_WIDTH,
     height: 265,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 18,
     padding: 10,
     marginBottom: 18,
 
-    justifyContent: 'space-between',
+    justifyContent: "space-between",
 
     elevation: 4,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOpacity: 0.1,
     shadowRadius: 6,
     shadowOffset: {
@@ -92,10 +114,10 @@ const styles = StyleSheet.create({
   },
 
   image: {
-    width: '100%',
+    width: "100%",
     height: 110,
     borderRadius: 14,
-    backgroundColor: '#eee',
+    backgroundColor: "#eee",
   },
 
   content: {
@@ -105,55 +127,67 @@ const styles = StyleSheet.create({
 
   title: {
     fontSize: 15,
-    fontWeight: 'bold',
-    color: '#000',
+    fontWeight: "bold",
+    color: "#000",
   },
 
   categoryText: {
     fontSize: 11,
-    color: '#FF5E22',
+    color: "#FF5E22",
     marginTop: 2,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 
   desc: {
     fontSize: 12,
-    color: '#777',
+    color: "#777",
     marginTop: 5,
     lineHeight: 16,
   },
 
   rating: {
     fontSize: 12,
-    color: '#FF5E22',
-    marginTop: 'auto',
+    color: "#FF5E22",
+    marginTop: "auto",
     marginBottom: 6,
   },
 
   bottomRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+
+  priceBox: {
+    maxWidth: "42%",
+    flexShrink: 1,
+  },
+
+  oldPrice: {
+    color: "#999",
+    fontWeight: "600",
+    fontSize: 11,
+    textDecorationLine: "line-through",
+    marginBottom: 1,
   },
 
   price: {
-    color: '#FF5E22',
-    fontWeight: 'bold',
+    color: "#FF5E22",
+    fontWeight: "bold",
     fontSize: 15,
-    maxWidth: '38%',
   },
 
   button: {
-    backgroundColor: '#FF5E22',
+    backgroundColor: "#FF5E22",
     paddingHorizontal: 8,
     paddingVertical: 6,
     borderRadius: 12,
-    maxWidth: '62%',
+    maxWidth: "58%",
   },
 
   buttonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 10,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });

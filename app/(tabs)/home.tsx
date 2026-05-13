@@ -1,4 +1,7 @@
-import React, { useCallback, useMemo } from "react";
+import { Feather } from "@expo/vector-icons";
+import type { Href } from "expo-router";
+import { router } from "expo-router";
+import { useCallback, useMemo } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -13,14 +16,12 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { router } from "expo-router";
-import type { Href } from "expo-router";
 
 import CategoryCard from "../../components/common/CategoryCard";
-import ProductCard1w from "../../components/ProductCard1w";
+import { heroData } from "../../components/data/homeData";
 import AppBar from "../../components/layout/AppBar";
 import BottomNavBar from "../../components/layout/BottomNavBar";
-import { heroData } from "../../components/data/homeData";
+import ProductCard1w from "../../components/ProductCard1w";
 import { useCart } from "../../hooks/useCart";
 import {
   Product,
@@ -70,6 +71,10 @@ const getProductImage = (image?: string) => {
   return productImages[image] || require("../../assets/images/A1/a.webp");
 };
 
+const getDiscountPrice = (price: number) => {
+  return Number((price * 0.8).toFixed(2));
+};
+
 export default function HomeScreen() {
   const { addToCart } = useCart();
 
@@ -88,7 +93,15 @@ export default function HomeScreen() {
   } = useProducts();
 
   const trendingProducts = useMemo(() => {
-    return products.slice(0, 8);
+    return products.slice(0, 4);
+  }, [products]);
+
+  const specialOffers = useMemo(() => {
+    if (products.length > 4) {
+      return products.slice(4, 8);
+    }
+
+    return products.slice(0, 4);
   }, [products]);
 
   const goToProductDetails = useCallback((productId: string) => {
@@ -99,11 +112,15 @@ export default function HomeScreen() {
   }, []);
 
   const handleAddToCart = useCallback(
-    (item: Product) => {
+    (item: Product, isOffer = false) => {
+      const finalPrice = isOffer
+        ? getDiscountPrice(Number(item.price || 0))
+        : item.price;
+
       addToCart({
         id: item.id,
         title: item.title,
-        price: item.price,
+        price: finalPrice,
         image: item.image,
         quantity: 1,
       });
@@ -147,7 +164,6 @@ export default function HomeScreen() {
 
         <View style={styles.heroCard}>
           <View style={styles.heroTextWrapper}>
-            <Text style={styles.heroSmallTitle}>Handmade Crafts</Text>
             <Text style={styles.heroText}>{heroData.title}</Text>
           </View>
 
@@ -167,12 +183,16 @@ export default function HomeScreen() {
           </View>
         ) : null}
 
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Categories</Text>
+        <View style={styles.centerSectionHeader}>
+          <Text style={styles.centerSectionTitle}>Categories</Text>
         </View>
 
         {loadingCategories ? (
-          <ActivityIndicator size="small" color={PRIMARY} style={styles.loader} />
+          <ActivityIndicator
+            size="small"
+            color={PRIMARY}
+            style={styles.loader}
+          />
         ) : (
           <FlatList
             data={categories}
@@ -182,23 +202,20 @@ export default function HomeScreen() {
             )}
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.horizontalListContent}
+            contentContainerStyle={styles.categoriesListContent}
           />
         )}
 
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Trending Now</Text>
-
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() => router.push("/(tabs)/search" as Href)}
-          >
-            <Text style={styles.seeAllText}>See all</Text>
-          </TouchableOpacity>
+        <View style={styles.centerSectionHeader}>
+          <Text style={styles.centerSectionTitle}>Trending Now</Text>
         </View>
 
         {loadingProducts ? (
-          <ActivityIndicator size="small" color={PRIMARY} style={styles.loader} />
+          <ActivityIndicator
+            size="small"
+            color={PRIMARY}
+            style={styles.loader}
+          />
         ) : (
           <FlatList
             data={trendingProducts}
@@ -218,61 +235,124 @@ export default function HomeScreen() {
             )}
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.horizontalListContent}
+            contentContainerStyle={styles.productsListContent}
+          />
+        )}
+
+        <View style={styles.centerSectionHeader}>
+          <Text style={styles.centerSectionTitle}>Special Offers</Text>
+        </View>
+
+        {loadingProducts ? (
+          <ActivityIndicator
+            size="small"
+            color={PRIMARY}
+            style={styles.loader}
+          />
+        ) : (
+          <FlatList
+            data={specialOffers}
+            keyExtractor={(item) => `offer-${item.id}`}
+            renderItem={({ item }) => {
+              const originalPrice = Number(item.price || 0);
+              const offerPrice = getDiscountPrice(originalPrice);
+
+              return (
+                <ProductCard1w
+                  id={item.id}
+                  title={item.title}
+                  category={item.category}
+                  oldPrice={originalPrice}
+                  price={offerPrice}
+                  rating={item.rating}
+                  image={getProductImage(item.image)}
+                  desc={item.desc || ""}
+                  onAdd={() => handleAddToCart(item, true)}
+                  onPressCard={() => goToProductDetails(item.id)}
+                />
+              );
+            }}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.productsListContent}
           />
         )}
 
         <View style={styles.footer}>
-          <Text style={styles.footerTitle}>Artisiana</Text>
-          <Text style={styles.footerSubtitle}>
-            Handmade crafts made with love.
-          </Text>
+          <View style={styles.footerTopBox}>
+            <Text style={styles.footerBrand}>Artisiana</Text>
+
+            <Text style={styles.footerSubtitle}>
+              Handmade crafts made with love and authenticity.
+            </Text>
+          </View>
+
+          <TouchableOpacity
+            style={styles.contactButton}
+            activeOpacity={0.85}
+            onPress={() => openLink("tel:+972592129473")}
+          >
+            <View style={styles.contactIconBox}>
+              <Feather name="phone" size={17} color={PRIMARY} />
+            </View>
+
+            <Text style={styles.contactText}>
+              Contact us :{" "}
+              <Text style={styles.contactNumber}>+972592129473</Text>
+            </Text>
+          </TouchableOpacity>
+
+          <View style={styles.followSection}>
+            <Text style={styles.followText}>Follow us</Text>
+
+            <View style={styles.socialRow}>
+              <TouchableOpacity
+                style={styles.socialButton}
+                activeOpacity={0.8}
+                onPress={() =>
+                  openLink(
+                    "https://www.facebook.com/share/18V5FmJ7Xt/?mibextid=wwXIfr"
+                  )
+                }
+              >
+                <Text style={styles.socialText}>f</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.socialButton}
+                activeOpacity={0.8}
+                onPress={() =>
+                  openLink(
+                    "https://www.instagram.com/zeyad_barahme?igsh=aW1kang2MThnd2do"
+                  )
+                }
+              >
+                <Feather name="instagram" size={17} color={PRIMARY} />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.socialButton}
+                activeOpacity={0.8}
+                onPress={() => openLink("https://wa.me/972592129473")}
+              >
+                <Feather name="message-circle" size={17} color={PRIMARY} />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.socialButton}
+                activeOpacity={0.8}
+                onPress={() => openLink("https://x.com")}
+              >
+                <Text style={styles.xText}>𝕏</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
 
           <View style={styles.footerDivider} />
 
-          <TouchableOpacity
-            style={styles.footerItem}
-            activeOpacity={0.8}
-            onPress={() => openLink("tel:0592129473")}
-          >
-            <Text style={styles.footerLabel}>Phone</Text>
-            <Text style={styles.footerValue}>0592129473</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.footerItem}
-            activeOpacity={0.8}
-            onPress={() =>
-              openLink(
-                "https://www.facebook.com/share/18V5FmJ7Xt/?mibextid=wwXIfr"
-              )
-            }
-          >
-            <Text style={styles.footerLabel}>Facebook</Text>
-            <Text style={styles.footerValue}>Open Facebook Page</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.footerItem}
-            activeOpacity={0.8}
-            onPress={() =>
-              openLink(
-                "https://www.instagram.com/zeyad_barahme?igsh=aW1kang2MThnd2do"
-              )
-            }
-          >
-            <Text style={styles.footerLabel}>Instagram</Text>
-            <Text style={styles.footerValue}>Open Instagram Page</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.footerItem}
-            activeOpacity={0.8}
-            onPress={() => openLink("https://wa.me/972592129473")}
-          >
-            <Text style={styles.footerLabel}>WhatsApp</Text>
-            <Text style={styles.footerValue}>+972592129473</Text>
-          </TouchableOpacity>
+          <Text style={styles.copyRight}>
+            © 2025 Artisiana. All rights reserved.
+          </Text>
         </View>
 
         <View style={styles.bottomSpacing} />
@@ -288,50 +368,46 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: BG,
   },
+
   container: {
     flex: 1,
     backgroundColor: BG,
   },
+
   contentContainer: {
     paddingHorizontal: 18,
     paddingTop: 12,
   },
+
   heroCard: {
     marginTop: 18,
     backgroundColor: CARD,
-    borderRadius: 26,
-    padding: 16,
+    borderRadius: 18,
+    padding: 14,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.07,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 5 },
-    elevation: 4,
   },
+
   heroTextWrapper: {
     flex: 1,
-    paddingRight: 14,
+    paddingRight: 12,
     justifyContent: "center",
   },
-  heroSmallTitle: {
-    fontSize: 14,
-    color: PRIMARY,
-    fontWeight: "700",
-    marginBottom: 8,
-  },
+
   heroText: {
-    fontSize: 17,
-    lineHeight: 28,
+    fontSize: 15,
+    lineHeight: 22,
     color: "#4A4A4A",
     fontWeight: "500",
   },
+
   heroImage: {
     width: 135,
     height: 155,
-    borderRadius: 22,
+    borderRadius: 16,
   },
+
   errorCard: {
     marginTop: 18,
     backgroundColor: "#FFF",
@@ -340,18 +416,21 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#F4B8A0",
   },
+
   errorTitle: {
     fontSize: 16,
     fontWeight: "800",
     color: TEXT,
     marginBottom: 5,
   },
+
   errorText: {
     fontSize: 14,
     color: "#777",
     lineHeight: 20,
     marginBottom: 12,
   },
+
   retryButton: {
     alignSelf: "flex-start",
     backgroundColor: PRIMARY,
@@ -359,76 +438,166 @@ const styles = StyleSheet.create({
     paddingVertical: 9,
     borderRadius: 14,
   },
+
   retryButtonText: {
     color: "#FFF",
     fontWeight: "700",
     fontSize: 13,
   },
-  sectionHeader: {
+
+  centerSectionHeader: {
     marginTop: 30,
     marginBottom: 14,
-    flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
   },
-  sectionTitle: {
-    fontSize: 29,
-    fontWeight: "800",
+
+  centerSectionTitle: {
+    fontSize: 18,
+    fontWeight: "700",
     color: TEXT,
   },
-  seeAllText: {
-    fontSize: 14,
-    color: PRIMARY,
-    fontWeight: "700",
-  },
-  horizontalListContent: {
+
+  categoriesListContent: {
     paddingRight: 12,
-    gap: 10,
+    gap: 12,
   },
+
+  productsListContent: {
+    paddingRight: 12,
+    gap: 14,
+  },
+
   loader: {
     marginVertical: 20,
   },
+
   footer: {
     marginTop: 34,
-    backgroundColor: CARD,
-    borderRadius: 24,
-    padding: 18,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 22,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderWidth: 1,
+    borderColor: "#F1E1D8",
     shadowColor: "#000",
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.05,
     shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 3,
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    elevation: 2,
   },
-  footerTitle: {
+
+  footerTopBox: {
+    alignItems: "center",
+  },
+
+  footerBrand: {
     fontSize: 24,
+    color: PRIMARY,
+    fontWeight: "800",
+    fontStyle: "italic",
+    textAlign: "center",
+  },
+
+  footerSubtitle: {
+    marginTop: 5,
+    fontSize: 12,
+    color: "#777",
+    lineHeight: 17,
+    textAlign: "center",
+    maxWidth: 260,
+  },
+
+  contactButton: {
+    marginTop: 14,
+    backgroundColor: "#FFF7F3",
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 11,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  contactIconBox: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: "#FFE7DD",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
+  },
+
+  contactText: {
+    flex: 1,
+    fontSize: 14,
+    color: TEXT,
+    fontWeight: "700",
+  },
+
+  contactNumber: {
+    color: PRIMARY,
+    fontWeight: "900",
+  },
+
+  followSection: {
+    marginTop: 16,
+    alignItems: "center",
+  },
+
+  followText: {
+    fontSize: 14,
     fontWeight: "800",
     color: TEXT,
-    marginBottom: 4,
+    textAlign: "center",
+    marginBottom: 10,
   },
-  footerSubtitle: {
-    fontSize: 14,
-    color: "#777",
-    lineHeight: 22,
+
+  socialRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
   },
+
+  socialButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: "#FFF7F3",
+    borderWidth: 1,
+    borderColor: "#FFE0D3",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  socialText: {
+    fontSize: 20,
+    color: PRIMARY,
+    fontWeight: "900",
+  },
+
+  xText: {
+    fontSize: 16,
+    color: PRIMARY,
+    fontWeight: "900",
+  },
+
   footerDivider: {
     height: 1,
     backgroundColor: "#F1E1D8",
-    marginVertical: 14,
+    marginTop: 14,
+    marginBottom: 10,
   },
-  footerItem: {
-    paddingVertical: 9,
-  },
-  footerLabel: {
-    fontSize: 13,
+
+  copyRight: {
+    fontSize: 10,
     color: "#999",
-    marginBottom: 3,
-    fontWeight: "600",
+    textAlign: "center",
   },
-  footerValue: {
-    fontSize: 15,
-    color: PRIMARY,
-    fontWeight: "700",
-  },
+
   bottomSpacing: {
     height: 120,
   },

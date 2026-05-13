@@ -4,6 +4,8 @@ import { Controller } from "react-hook-form";
 import { StyleSheet, TextInput, View } from "react-native";
 import CheckoutInput from "../shared/CheckoutInput";
 import {
+  formatCardNumber,
+  formatCvc,
   validateCardholderNameField,
   validateCardNumberField,
   validateCvcField,
@@ -50,7 +52,7 @@ export default function PaymentForm({
             label="Card Number"
             placeholder="Enter card number"
             value={value}
-            onChangeText={onChange}
+            onChangeText={(text) => onChange(formatCardNumber(text))}
             keyboardType="numeric"
             errorMessage={errors.cardNumber?.message}
           />
@@ -110,7 +112,7 @@ export default function PaymentForm({
                 label="CVC"
                 placeholder="Enter CVC"
                 value={value}
-                onChangeText={onChange}
+                onChangeText={(text) => onChange(formatCvc(text))}
                 keyboardType="numeric"
                 errorMessage={errors.cvc?.message}
               />

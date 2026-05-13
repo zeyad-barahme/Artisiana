@@ -22,12 +22,8 @@ export function validateCardNumberField(value: string): FieldValidationResult {
     return "Card number must contain numbers only.";
   }
 
-  if (cleanValue.length < 13) {
-    return "Card number must be at least 13 digits.";
-  }
-
-  if (cleanValue.length > 19) {
-    return "Card number must not be more than 19 digits.";
+  if (cleanValue.length !== 16) {
+    return "Card number must be exactly 16 digits.";
   }
 
   return true;
@@ -94,8 +90,8 @@ export function validateCvcField(value: string): FieldValidationResult {
     return "CVC is required.";
   }
 
-  if (!/^\d{3,4}$/.test(cleanValue)) {
-    return "CVC must be 3 or 4 digits.";
+  if (!/^\d{3}$/.test(cleanValue)) {
+    return "CVC must be exactly 3 digits.";
   }
 
   return true;
@@ -192,5 +188,15 @@ export function formatExpireDate(value: string) {
     return digitsOnly;
   }
 
-  return `${digitsOnly.slice(0, 2)}/${digitsOnly.slice(2)}`;
+  return '${digitsOnly.slice(0, 2)}/${digitsOnly.slice(2)}';
+}
+
+export function formatCardNumber(value: string) {
+  const digitsOnly = value.replace(/\D/g, "").slice(0, 16);
+
+  return digitsOnly.replace(/(.{4})/g, "$1 ").trim();
+}
+
+export function formatCvc(value: string) {
+  return value.replace(/\D/g, "").slice(0, 3);
 }
