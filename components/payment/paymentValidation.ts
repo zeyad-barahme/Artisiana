@@ -188,7 +188,7 @@ export function formatExpireDate(value: string) {
     return digitsOnly;
   }
 
-  return '${digitsOnly.slice(0, 2)}/${digitsOnly.slice(2)}';
+  return `${digitsOnly.slice(0, 2)}/${digitsOnly.slice(2)}`;
 }
 
 export function formatCardNumber(value: string) {

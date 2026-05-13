@@ -1,11 +1,11 @@
 import {
-    collection,
-    deleteDoc,
-    doc,
-    getDoc,
-    onSnapshot,
-    setDoc,
-    updateDoc,
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  onSnapshot,
+  setDoc,
+  updateDoc,
 } from "firebase/firestore";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { db } from "../api/firebase";
@@ -29,7 +29,6 @@ function toNumber(value: unknown, fallback = 0) {
 
 export function useCartLogic() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [search, setSearch] = useState("");
 
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, "cart"), (snapshot) => {
@@ -75,11 +74,7 @@ export function useCartLogic() {
     }
   }, []);
 
-  const filteredItems = useMemo(() => {
-    return cartItems.filter((item) =>
-      item.title.toLowerCase().includes(search.toLowerCase()),
-    );
-  }, [cartItems, search]);
+  const filteredItems = cartItems;
 
   const total = useMemo(() => {
     return cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -139,9 +134,6 @@ export function useCartLogic() {
     totalPrice: total,
     subtotal: total,
     totalItems,
-
-    search,
-    setSearch,
 
     addToCart,
     increaseQuantity,
