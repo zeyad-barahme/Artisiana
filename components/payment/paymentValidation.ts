@@ -1,7 +1,3 @@
-export type ValidationResult =
-  | { isValid: true }
-  | { isValid: false; title: string; message: string };
-
 export type PaymentInput = {
   cardNumber: string;
   cardholderName: string;
@@ -97,73 +93,6 @@ export function validateCvcField(value: string): FieldValidationResult {
   return true;
 }
 
-export function validatePaymentDetails({
-  cardNumber,
-  cardholderName,
-  expireDate,
-  cvc,
-}: PaymentInput): ValidationResult {
-  const cleanCardNumber = cardNumber.replace(/\s/g, "");
-  const cleanCardholderName = cardholderName.trim();
-  const cleanExpireDate = expireDate.trim();
-  const cleanCvc = cvc.trim();
-
-  if (
-    cleanCardNumber === "" ||
-    cleanCardholderName === "" ||
-    cleanExpireDate === "" ||
-    cleanCvc === ""
-  ) {
-    return {
-      isValid: false,
-      title: "Missing Information",
-      message: "Please fill in all payment fields.",
-    };
-  }
-
-  const cardNumberError = validateCardNumberField(cardNumber);
-
-  if (cardNumberError !== true) {
-    return {
-      isValid: false,
-      title: "Invalid Card Number",
-      message: cardNumberError,
-    };
-  }
-
-  const cardholderNameError = validateCardholderNameField(cardholderName);
-
-  if (cardholderNameError !== true) {
-    return {
-      isValid: false,
-      title: "Invalid Cardholder Name",
-      message: cardholderNameError,
-    };
-  }
-
-  const expireDateError = validateExpireDateField(expireDate);
-
-  if (expireDateError !== true) {
-    return {
-      isValid: false,
-      title: "Invalid Expire Date",
-      message: expireDateError,
-    };
-  }
-
-  const cvcError = validateCvcField(cvc);
-
-  if (cvcError !== true) {
-    return {
-      isValid: false,
-      title: "Invalid CVC",
-      message: cvcError,
-    };
-  }
-
-  return { isValid: true };
-}
-
 export function cleanPaymentDetails({
   cardNumber,
   cardholderName,
@@ -174,7 +103,7 @@ export function cleanPaymentDetails({
 
   return {
     cardNumber: cleanCardNumber,
-    cardholderName: cardholderName.trim(),
+    cardholderName: cardholderName.trim().toUpperCase(),
     expireDate: expireDate.trim(),
     cvc: cvc.trim(),
     cardLast4: cleanCardNumber.slice(-4),
