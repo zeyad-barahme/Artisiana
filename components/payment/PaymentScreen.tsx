@@ -4,7 +4,15 @@ import { createCheckoutOrder } from "@/services/orders/checkoutOrder.service";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
-import { Alert, StyleSheet, TextInput, View } from "react-native";
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  View,
+} from "react-native";
 import CheckoutHeader from "../checkout/CheckoutHeader";
 import CheckoutButton from "../shared/CheckoutButton";
 import { CheckoutProgress } from "../shared/CheckoutProgress";
@@ -120,32 +128,42 @@ function PaymentContent({
   };
 
   return (
-    <View style={styles.container}>
-      <CheckoutHeader backTo="/checkout" />
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 20 : 0}
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <CheckoutHeader backTo="/checkout" />
 
-      <CheckoutProgress step={2} />
+        <CheckoutProgress step={2} />
 
-      <View style={styles.content}>
-        <PaymentSummary total={total} />
+        <View style={styles.content}>
+          <PaymentSummary total={total} />
 
-        <PaymentForm
-          control={control}
-          errors={errors}
-          formatExpireDate={formatExpireDate}
-          cardNumberRef={cardNumberRef}
-          cardholderNameRef={cardholderNameRef}
-          expireDateRef={expireDateRef}
-          cvcRef={cvcRef}
-        />
-
-        <View style={styles.buttonContainer}>
-          <CheckoutButton
-            title={isSaving ? "Saving..." : "Pay"}
-            onPress={handleSubmit(handlePay)}
+          <PaymentForm
+            control={control}
+            errors={errors}
+            formatExpireDate={formatExpireDate}
+            cardNumberRef={cardNumberRef}
+            cardholderNameRef={cardholderNameRef}
+            expireDateRef={expireDateRef}
+            cvcRef={cvcRef}
           />
+
+          <View style={styles.buttonContainer}>
+            <CheckoutButton
+              title={isSaving ? "Saving..." : "Pay"}
+              onPress={handleSubmit(handlePay)}
+            />
+          </View>
         </View>
-      </View>
-    </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -175,6 +193,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
   },
 
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 40,
+  },
+
   content: {
     flex: 1,
     marginTop: 50,
@@ -184,5 +207,6 @@ const styles = StyleSheet.create({
   buttonContainer: {
     marginTop: 65,
     alignItems: "center",
+    paddingBottom: 30,
   },
 });

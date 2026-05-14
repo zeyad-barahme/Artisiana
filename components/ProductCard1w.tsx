@@ -1,3 +1,4 @@
+import React, { memo } from "react";
 import {
   View,
   Text,
@@ -23,7 +24,7 @@ type Props = {
   onPressCard?: () => void;
 };
 
-export default function ProductCard({
+const ProductCard = memo(function ProductCard({
   title,
   price,
   oldPrice,
@@ -90,7 +91,9 @@ export default function ProductCard({
       </View>
     </View>
   );
-}
+});
+
+export default ProductCard;
 
 const styles = StyleSheet.create({
   card: {
@@ -100,69 +103,55 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     padding: 10,
     marginBottom: 18,
-
     justifyContent: "space-between",
-
     elevation: 4,
     shadowColor: "#000",
     shadowOpacity: 0.1,
     shadowRadius: 6,
-    shadowOffset: {
-      width: 0,
-      height: 3,
-    },
+    shadowOffset: { width: 0, height: 3 },
   },
-
   image: {
     width: "100%",
     height: 110,
     borderRadius: 14,
     backgroundColor: "#eee",
   },
-
   content: {
     flex: 1,
     marginTop: 8,
   },
-
   title: {
     fontSize: 15,
     fontWeight: "bold",
     color: "#000",
   },
-
   categoryText: {
     fontSize: 11,
     color: "#FF5E22",
     marginTop: 2,
     fontWeight: "600",
   },
-
   desc: {
     fontSize: 12,
     color: "#777",
     marginTop: 5,
     lineHeight: 16,
   },
-
   rating: {
     fontSize: 12,
     color: "#FF5E22",
     marginTop: "auto",
     marginBottom: 6,
   },
-
   bottomRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
-
   priceBox: {
     maxWidth: "42%",
     flexShrink: 1,
   },
-
   oldPrice: {
     color: "#999",
     fontWeight: "600",
@@ -170,13 +159,11 @@ const styles = StyleSheet.create({
     textDecorationLine: "line-through",
     marginBottom: 1,
   },
-
   price: {
     color: "#FF5E22",
     fontWeight: "bold",
     fontSize: 15,
   },
-
   button: {
     backgroundColor: "#FF5E22",
     paddingHorizontal: 8,
@@ -184,7 +171,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     maxWidth: "58%",
   },
-
   buttonText: {
     color: "#fff",
     fontSize: 10,

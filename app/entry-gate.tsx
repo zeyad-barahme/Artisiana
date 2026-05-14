@@ -36,7 +36,7 @@ export default function EntryGateScreen() {
       <View style={[styles.content, { width: contentWidth }]}>
         <View style={styles.logoContainer}>
           <Image
-            source={require("../assets/images/Logo.png")}
+            source={require("../assets/images/logo.png")}
             style={{
               width: logoSize,
               height: logoSize,

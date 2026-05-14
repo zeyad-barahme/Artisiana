@@ -1,22 +1,12 @@
 import { Rancho_400Regular, useFonts } from "@expo-google-fonts/rancho";
 import { useRouter } from "expo-router";
-import { useState, useEffect } from "react";
-import {
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-  ActivityIndicator,
-  Alert,
-} from "react-native";
-import { collection, query, where, getDocs } from "firebase/firestore";
-import { db } from "../../api/firebase";
-
+import { useCallback } from "react"; 
+import { Image, ScrollView, StyleSheet, Text, View, ActivityIndicator } from "react-native";
 import AppBar from "../../components/layout/AppBar";
 import ProductCard from "../../components/ProductCard1w";
 import BottomNavBar from "../../components/layout/BottomNavBar";
 import { useCart } from "../../hooks/useCart";
+import { useProducts } from "../../hooks/useProducts"; 
 
 const localImages: { [key: string]: any } = {
   ce: require("../../assets/images/A1/ce.png"),
@@ -31,100 +21,57 @@ const localImages: { [key: string]: any } = {
 export default function Ceramics() {
   const router = useRouter();
   const { addToCart } = useCart();
-
   const [fontsLoaded] = useFonts({ Rancho_400Regular });
-  const [products, setProducts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchCeramics = async () => {
-      try {
-        const q = query(
-          collection(db, "products"),
-          where("category", "==", "Ceramics")
-        );
-
-        const querySnapshot = await getDocs(q);
-
-        const items = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-
-        setProducts(items);
-      } catch (error) {
-        console.error("Error fetching ceramics: ", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCeramics();
-  }, []);
-
-  const handleAddToCart = (item: any) => {
-    addToCart({
-      id: item.id,
-      title: item.title,
-      price: item.price,
-      image: item.image,
-      quantity: 1,
+  const { data: products, isLoading, isError } = useProducts("Ceramics");
+  const handleAddToCart = useCallback((item: any) => {
+    addToCart({ 
+      id: item.id, 
+      title: item.title, 
+      price: item.price, 
+      image: item.image, 
+      quantity: 1 
     });
+   
+  }, [addToCart]);
 
-    Alert.alert("Added", "Product added to cart successfully.");
-  };
+  const handlePressCard = useCallback((productId: string) => {
+    router.push({ 
+      pathname: "/(tabs)/productDetails", 
+      params: { productId } 
+    });
+  }, [router]);
 
-  if (!fontsLoaded || loading) {
+  if (!fontsLoaded || isLoading) {
+    return <ActivityIndicator size="large" color="#FF5E22" style={{ flex: 1 }} />;
+  }
+
+  if (isError) {
     return (
-      <ActivityIndicator
-        size="large"
-        color="#FF5E22"
-        style={{ flex: 1 }}
-      />
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <Text>Error loading ceramics products.</Text>
+      </View>
     );
   }
 
   return (
     <View style={{ flex: 1 }}>
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={{ paddingBottom: 100 }}
-      >
+      <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 100 }}>
         <AppBar />
-
-        <Image
-          source={require("../../assets/images/A1/ce.png")}
-          style={styles.image}
-        />
-
+        <Image source={require("../../assets/images/A1/ce.png")} style={styles.image} />
         <Text style={styles.title}>Ceramics</Text>
-
         <View style={styles.productsContainer}>
-          {products.map((item) => (
+          {products?.map((item) => (
             <ProductCard
               key={item.id}
-              id={item.id}
-              title={item.title}
-              desc={item.desc || ""}
-              price={item.price}
-              category={item.category}
-              rating={item.rating}
-              image={
-                localImages[item.image] ||
-                require("../../assets/images/A1/ce1.webp")
-              }
+              {...item}
+              image={localImages[item.image] || require("../../assets/images/A1/ce1.webp")}
+              // تمرير الوظائف المثبتة
               onAdd={() => handleAddToCart(item)}
-              onPressCard={() =>
-                router.push({
-                  pathname: "/(tabs)/productDetails",
-                  params: { productId: item.id },
-                })
-              }
+              onPressCard={() => handlePressCard(item.id)}
             />
           ))}
         </View>
       </ScrollView>
-
       <BottomNavBar />
     </View>
   );

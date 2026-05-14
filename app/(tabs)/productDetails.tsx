@@ -1,10 +1,10 @@
+import { useCart } from "@/hooks/useCart";
 import { Rancho_400Regular, useFonts } from "@expo-google-fonts/rancho";
+import { Feather } from "@expo/vector-icons";
+import type { Href } from "expo-router";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { doc, getDoc } from "firebase/firestore";
-import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Image,
   ScrollView,
   StyleSheet,
@@ -13,8 +13,7 @@ import {
   View,
 } from "react-native";
 import { Appbar } from "react-native-paper";
-import { db } from "../../api/firebase";
-import { useCart } from "../../hooks/useCart";
+import { useProductDetails } from "../../hooks/useProductDetails";
 
 const localImages: { [key: string]: any } = {
   a: require("../../assets/images/A1/a.webp"),
@@ -23,7 +22,6 @@ const localImages: { [key: string]: any } = {
   d: require("../../assets/images/A1/d.jpg"),
   e: require("../../assets/images/A1/e.jpg"),
   f: require("../../assets/images/A1/f.jpg"),
-
   ac: require("../../assets/images/A1/ac.png"),
   ac1: require("../../assets/images/A1/ac1.webp"),
   ac2: require("../../assets/images/A1/ac2.jpg"),
@@ -31,7 +29,6 @@ const localImages: { [key: string]: any } = {
   ac4: require("../../assets/images/A1/ac4.avif"),
   ac5: require("../../assets/images/A1/ac5.webp"),
   ac6: require("../../assets/images/A1/ac6.webp"),
-
   ce: require("../../assets/images/A1/ce.png"),
   ce1: require("../../assets/images/A1/ce1.webp"),
   ce2: require("../../assets/images/A1/ce2.webp"),
@@ -42,64 +39,24 @@ const localImages: { [key: string]: any } = {
 };
 
 const getProductImage = (image?: string) => {
-  if (!image) {
-    return require("../../assets/images/A1/a.webp");
-  }
-
-  if (image.startsWith("http")) {
-    return { uri: image };
-  }
-
+  if (!image) return require("../../assets/images/A1/a.webp");
+  if (image.startsWith("http")) return { uri: image };
   return localImages[image] || require("../../assets/images/A1/a.webp");
 };
 
 export default function ProductDetails() {
+  const { totalItems } = useCart();
   const router = useRouter();
-
   const params = useLocalSearchParams();
-  const productId = params.productId || params.id;
-
+  const productId = (params.productId || params.id) as string;
   const { addToCart } = useCart();
 
-  const [product, setProduct] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [fontsLoaded] = useFonts({ Rancho_400Regular });
 
-  const [fontsLoaded] = useFonts({
-    Rancho_400Regular,
-  });
-
-  useEffect(() => {
-    const fetchProductDetails = async () => {
-      if (!productId) {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const docRef = doc(db, "products", productId as string);
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists()) {
-          setProduct({
-            id: docSnap.id,
-            ...docSnap.data(),
-          });
-        } else {
-          console.log("No such product!");
-        }
-      } catch (error) {
-        console.error("Error fetching product details:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProductDetails();
-  }, [productId]);
+  const { data: product, isLoading, isError } = useProductDetails(productId);
 
   const handleAddToCart = () => {
     if (!product) return;
-
     addToCart({
       id: product.id,
       title: product.title,
@@ -107,44 +64,36 @@ export default function ProductDetails() {
       image: product.image,
       quantity: 1,
     });
-
-    Alert.alert("تمت الإضافة", "تم إضافة المنتج إلى سلة المشتريات بنجاح!", [
-      { text: "متابعة التسوق", style: "cancel" },
-      {
-        text: "الذهاب للسلة",
-        onPress: () => router.push("/(tabs)/cart"),
-      },
-    ]);
   };
 
-  const goToReviews = () => {
-    if (!product) return;
-
+  const goToReviews = () =>
+    product &&
     router.push({
       pathname: "/Reviews/Reviews",
       params: { productId: product.id },
     });
-  };
-
-  const goToAddReview = () => {
-    if (!product) return;
-
+  const goToAddReview = () =>
+    product &&
     router.push({
       pathname: "/Reviews/AddReview",
       params: { productId: product.id },
     });
-  };
 
-  if (!fontsLoaded || loading) {
+  if (!fontsLoaded || isLoading) {
     return (
       <ActivityIndicator size="large" color="#FF5E22" style={{ flex: 1 }} />
     );
   }
 
-  if (!product) {
+  if (isError || !product) {
     return (
       <View style={styles.notFoundContainer}>
-        <Text>Product not found!</Text>
+        <Text style={{ fontSize: 18, marginBottom: 10 }}>
+          Product not found!
+        </Text>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Text style={{ color: "#FF5E22", fontWeight: "bold" }}>Go Back</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -155,30 +104,34 @@ export default function ProductDetails() {
         <TouchableOpacity onPress={() => router.back()}>
           <Appbar.Action icon="arrow-left" color="#000" />
         </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.cartButton}
+          onPress={() => router.push("/(tabs)/cart" as Href)}
+          activeOpacity={0.8}
+        >
+          <Feather name="shopping-cart" size={27} color="#FF7F50" />
 
-        <TouchableOpacity onPress={() => router.push("/(tabs)/cart")}>
-          <Appbar.Action icon="cart-outline" color="#FF5E22" />
+          {totalItems > 0 && (
+            <View style={styles.cartBadge}>
+              <Text style={styles.cartBadgeText}>{totalItems}</Text>
+            </View>
+          )}
         </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.pageTitle}>Product Details</Text>
-
         <Image
           source={getProductImage(product.image)}
           style={styles.mainImage}
         />
-
         <Text style={styles.productName}>{product.title}</Text>
-
         <Text style={styles.price}>${product.price}</Text>
-
         <Text style={styles.rating}>
           {"⭐".repeat(Math.round(product.rating || 5))}
         </Text>
 
         <Text style={styles.descriptionTitle}>Description:</Text>
-
         <Text style={styles.description}>
           {product.desc || "No description available for this product."}
         </Text>
@@ -198,7 +151,6 @@ export default function ProductDetails() {
             >
               <Text style={styles.secondaryButtonText}>Reviews</Text>
             </TouchableOpacity>
-
             <TouchableOpacity
               style={styles.secondaryButton}
               onPress={goToAddReview}
@@ -312,5 +264,31 @@ const styles = StyleSheet.create({
     color: "#FF5E22",
     fontSize: 16,
     fontWeight: "bold",
+  },
+  cartButton: {
+    width: 38,
+    height: 38,
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
+  },
+
+  cartBadge: {
+    position: "absolute",
+    top: -5,
+    right: -5,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: "#FF4D4D",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 5,
+  },
+
+  cartBadgeText: {
+    color: "#FFFFFF",
+    fontSize: 10,
+    fontWeight: "800",
   },
 });

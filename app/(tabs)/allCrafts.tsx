@@ -1,22 +1,19 @@
 import { Rancho_400Regular, useFonts } from "@expo-google-fonts/rancho";
 import { useRouter } from "expo-router";
-import { useState, useEffect } from "react";
+import { useCallback } from "react";
 import {
+  ActivityIndicator,
   Image,
   ScrollView,
   StyleSheet,
   Text,
   View,
-  ActivityIndicator,
-  Alert,
 } from "react-native";
-import { collection, query, where, getDocs } from "firebase/firestore";
-import { db } from "../../api/firebase";
-
 import AppBar from "../../components/layout/AppBar";
-import ProductCard from "../../components/ProductCard1w";
 import BottomNavBar from "../../components/layout/BottomNavBar";
+import ProductCard from "../../components/ProductCard1w";
 import { useCart } from "../../hooks/useCart";
+import { useProducts } from "../../hooks/useProducts";
 
 const localImages: { [key: string]: any } = {
   a: require("../../assets/images/A1/a.webp"),
@@ -31,56 +28,44 @@ const localImages: { [key: string]: any } = {
 export default function AllCrafts() {
   const router = useRouter();
   const { addToCart } = useCart();
-
   const [fontsLoaded] = useFonts({ Rancho_400Regular });
-  const [products, setProducts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const q = query(
-          collection(db, "products"),
-          where("category", "==", "All Crafts")
-        );
+  const { data: products, isLoading, isError } = useProducts("All Crafts");
 
-        const querySnapshot = await getDocs(q);
+  const handleAddToCart = useCallback(
+    (item: any) => {
+      addToCart({
+        id: item.id,
+        title: item.title,
+        price: item.price,
+        image: item.image,
+        quantity: 1,
+      });
+    },
+    [addToCart],
+  );
 
-        const items = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
+  const handlePressCard = useCallback(
+    (productId: string) => {
+      router.push({
+        pathname: "/(tabs)/productDetails",
+        params: { productId },
+      });
+    },
+    [router],
+  );
 
-        setProducts(items);
-      } catch (error) {
-        console.error("Error fetching products: ", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProducts();
-  }, []);
-
-  const handleAddToCart = (item: any) => {
-    addToCart({
-      id: item.id,
-      title: item.title,
-      price: item.price,
-      image: item.image,
-      quantity: 1,
-    });
-
-    Alert.alert("Added", "Product added to cart successfully.");
-  };
-
-  if (!fontsLoaded || loading) {
+  if (!fontsLoaded || isLoading) {
     return (
-      <ActivityIndicator
-        size="large"
-        color="#FF5E22"
-        style={{ flex: 1 }}
-      />
+      <ActivityIndicator size="large" color="#FF5E22" style={{ flex: 1 }} />
+    );
+  }
+
+  if (isError) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <Text>Error loading products.</Text>
+      </View>
     );
   }
 
@@ -91,37 +76,26 @@ export default function AllCrafts() {
         contentContainerStyle={{ paddingBottom: 100 }}
       >
         <AppBar />
-
         <Image
           source={require("../../assets/images/A1/08bfaa47c6dec68aae046dcf5e766154b122ef7e.png")}
           style={styles.image}
         />
-
         <Text style={styles.title}>All Crafts</Text>
-
         <View style={styles.productsContainer}>
-          {products.map((item) => (
+          {products?.map((item) => (
             <ProductCard
               key={item.id}
-              id={item.id}
-              title={item.title}
-              desc={item.desc || ""}
-              price={item.price}
-              category={item.category}
-              rating={item.rating}
-              image={localImages[item.image] || require("../../assets/images/A1/a.webp")}
-              onAdd={() => handleAddToCart(item)}
-              onPressCard={() =>
-                router.push({
-                  pathname: "/(tabs)/productDetails",
-                  params: { productId: item.id },
-                })
+              {...item}
+              image={
+                localImages[item.image] ||
+                require("../../assets/images/A1/a.webp")
               }
+              onAdd={() => handleAddToCart(item)}
+              onPressCard={() => handlePressCard(item.id)}
             />
           ))}
         </View>
       </ScrollView>
-
       <BottomNavBar />
     </View>
   );

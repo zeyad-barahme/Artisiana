@@ -1,4 +1,3 @@
-import { useRouter } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import CartList from "../../components/cart/CartList";
@@ -9,8 +8,6 @@ import BottomNavBar from "../../components/layout/BottomNavBar";
 import { useCart } from "../../hooks/useCart";
 
 export default function CartScreen() {
-  const router = useRouter();
-
   const {
     filteredItems,
     total,
