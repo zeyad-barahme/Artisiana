@@ -1,22 +1,22 @@
 import { Rancho_400Regular, useFonts } from "@expo-google-fonts/rancho";
 import { useRouter } from "expo-router";
-import { useState, useEffect } from "react";
+import { useCallback } from "react";
 import {
+  ActivityIndicator,
   Image,
   ScrollView,
   StyleSheet,
   Text,
   View,
-  ActivityIndicator,
-  Alert,
 } from "react-native";
-import { collection, query, where, getDocs } from "firebase/firestore";
-import { db } from "../../api/firebase";
 
+import { auth } from "../../api/firebase";
 import AppBar from "../../components/layout/AppBar";
-import ProductCard from "../../components/ProductCard1w";
 import BottomNavBar from "../../components/layout/BottomNavBar";
+import ProductCard from "../../components/ProductCard1w";
 import { useCart } from "../../hooks/useCart";
+import { useProducts } from "../../hooks/useProducts";
+import { notifyCartItemAdded } from "../../services/notifications/notification.service";
 
 const localImages: { [key: string]: any } = {
   a: require("../../assets/images/A1/a.webp"),
@@ -31,56 +31,54 @@ const localImages: { [key: string]: any } = {
 export default function AllCrafts() {
   const router = useRouter();
   const { addToCart } = useCart();
-
   const [fontsLoaded] = useFonts({ Rancho_400Regular });
-  const [products, setProducts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const q = query(
-          collection(db, "products"),
-          where("category", "==", "All Crafts")
-        );
+  const { data: products, isLoading, isError } = useProducts("All Crafts");
 
-        const querySnapshot = await getDocs(q);
+  const handleAddToCart = useCallback(
+    (item: any) => {
+      addToCart({
+        id: item.id,
+        title: item.title,
+        price: item.price,
+        image: item.image,
+        quantity: 1,
+      });
 
-        const items = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
+      const userId = auth.currentUser?.uid;
 
-        setProducts(items);
-      } catch (error) {
-        console.error("Error fetching products: ", error);
-      } finally {
-        setLoading(false);
+      if (userId) {
+        void notifyCartItemAdded({
+          userId,
+          productId: item.id,
+          productTitle: item.title,
+        });
       }
-    };
+    },
+    [addToCart]
+  );
 
-    fetchProducts();
-  }, []);
+  const handlePressCard = useCallback(
+    (productId: string) => {
+      router.push({
+        pathname: "/(tabs)/productDetails",
+        params: { productId },
+      });
+    },
+    [router]
+  );
 
-  const handleAddToCart = (item: any) => {
-    addToCart({
-      id: item.id,
-      title: item.title,
-      price: item.price,
-      image: item.image,
-      quantity: 1,
-    });
-
-    Alert.alert("Added", "Product added to cart successfully.");
-  };
-
-  if (!fontsLoaded || loading) {
+  if (!fontsLoaded || isLoading) {
     return (
-      <ActivityIndicator
-        size="large"
-        color="#FF5E22"
-        style={{ flex: 1 }}
-      />
+      <ActivityIndicator size="large" color="#FF5E22" style={{ flex: 1 }} />
+    );
+  }
+
+  if (isError) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text>Error loading products.</Text>
+      </View>
     );
   }
 
@@ -100,23 +98,16 @@ export default function AllCrafts() {
         <Text style={styles.title}>All Crafts</Text>
 
         <View style={styles.productsContainer}>
-          {products.map((item) => (
+          {products?.map((item) => (
             <ProductCard
               key={item.id}
-              id={item.id}
-              title={item.title}
-              desc={item.desc || ""}
-              price={item.price}
-              category={item.category}
-              rating={item.rating}
-              image={localImages[item.image] || require("../../assets/images/A1/a.webp")}
-              onAdd={() => handleAddToCart(item)}
-              onPressCard={() =>
-                router.push({
-                  pathname: "/(tabs)/productDetails",
-                  params: { productId: item.id },
-                })
+              {...item}
+              image={
+                localImages[item.image] ||
+                require("../../assets/images/A1/a.webp")
               }
+              onAdd={() => handleAddToCart(item)}
+              onPressCard={() => handlePressCard(item.id)}
             />
           ))}
         </View>
@@ -132,20 +123,29 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f5f5f5",
   },
+
   image: {
     width: "100%",
     height: 280,
   },
+
   title: {
     fontSize: 30,
     textAlign: "center",
     marginVertical: 20,
     fontFamily: "Rancho_400Regular",
   },
+
   productsContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
     paddingHorizontal: 10,
+  },
+
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });

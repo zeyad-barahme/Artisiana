@@ -173,7 +173,7 @@ function PaymentContent({
 
           <View style={styles.buttonContainer}>
             <CheckoutButton
-              title={createOrderMutation.isPending ? "Saving..." : "Pay"}
+              title={isSaving ? "Saving..." : "Pay"}
               onPress={handleSubmit(handlePay)}
             />
           </View>

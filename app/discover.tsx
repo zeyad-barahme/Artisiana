@@ -18,7 +18,7 @@ export default function DiscoverScreen() {
       />
 
       <Text style={styles.text}>
-        We’re glad to have you back. Start exploring now.
+        We're glad to have you back. Start exploring now.
       </Text>
 
       <TouchableOpacity style={styles.button} onPress={handleContinue}>

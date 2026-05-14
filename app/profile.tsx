@@ -30,6 +30,7 @@ import {
   getOrdersByUser,
   type CheckoutOrder,
 } from "@/services/orders/checkoutOrder.service";
+import { notifyProfileUpdated } from "@/services/notifications/notification.service";
 
 const orderImages: Record<string, any> = {
   ac: require("../assets/images/A1/ac.png"),
@@ -136,6 +137,7 @@ export default function Profile() {
     try {
       await setLocalAvatarUri(user.uid, uri);
       await updateUserProfile(user.uid, { imageUrl: uri });
+      await notifyProfileUpdated(user.uid);
       setUser({ ...user, imageUrl: uri });
     } catch (error) {
       console.log("Error updating avatar:", error);
