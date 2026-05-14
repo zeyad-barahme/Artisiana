@@ -1,7 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import type { Href } from "expo-router";
 import { router } from "expo-router";
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -17,8 +17,8 @@ import {
   View,
 } from "react-native";
 
+import { auth } from "../../api/firebase";
 import CategoryCard from "../../components/common/CategoryCard";
-import { heroData } from "../../components/data/homeData";
 import AppBar from "../../components/layout/AppBar";
 import BottomNavBar from "../../components/layout/BottomNavBar";
 import ProductCard1w from "../../components/ProductCard1w";
@@ -28,7 +28,11 @@ import {
   useCategories,
   useProducts,
 } from "../../hooks/useHomeData";
-import { auth } from "../../api/firebase";
+import {
+  addFavorite,
+  getUserFavorites,
+  removeFavorite,
+} from "../../services/favorites/favorites.service";
 import {
   notifyCartItemAdded,
   notifyOfferAddedToCart,
@@ -82,6 +86,7 @@ const getDiscountPrice = (price: number) => {
 
 export default function HomeScreen() {
   const { addToCart } = useCart();
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
 
   const {
     data: categories = [],
@@ -96,6 +101,23 @@ export default function HomeScreen() {
     isError: productsError,
     refetch: refetchProducts,
   } = useProducts();
+
+  useEffect(() => {
+    const loadFavorites = async () => {
+      const userId = auth.currentUser?.uid;
+
+      if (!userId) return;
+
+      try {
+        const ids = await getUserFavorites(userId);
+        setFavoriteIds(ids);
+      } catch (error) {
+        console.log("Error loading favorites:", error);
+      }
+    };
+
+    loadFavorites();
+  }, []);
 
   const trendingProducts = useMemo(() => {
     return products.slice(0, 4);
@@ -115,6 +137,36 @@ export default function HomeScreen() {
       params: { productId },
     } as Href);
   }, []);
+
+  const handleToggleFavorite = useCallback(
+    async (item: Product) => {
+      const userId = auth.currentUser?.uid;
+
+      if (!userId) {
+        Alert.alert("Login Required", "Please login to save favorites.");
+        return;
+      }
+
+      const isAlreadyFavorite = favoriteIds.includes(item.id);
+
+      try {
+        if (isAlreadyFavorite) {
+          await removeFavorite(userId, item.id);
+
+          setFavoriteIds((prev) =>
+            prev.filter((productId) => productId !== item.id)
+          );
+        } else {
+          await addFavorite(userId, item);
+
+          setFavoriteIds((prev) => [...prev, item.id]);
+        }
+      } catch (error) {
+        Alert.alert("Error", "Something went wrong. Please try again.");
+      }
+    },
+    [favoriteIds]
+  );
 
   const handleAddToCart = useCallback(
     (item: Product, isOffer = false) => {
@@ -141,8 +193,6 @@ export default function HomeScreen() {
           productTitle: item.title,
         });
       }
-
-      Alert.alert("Added", "Product added to cart successfully.");
     },
     [addToCart]
   );
@@ -181,10 +231,17 @@ export default function HomeScreen() {
 
         <View style={styles.heroCard}>
           <View style={styles.heroTextWrapper}>
-            <Text style={styles.heroText}>{heroData.title}</Text>
+            <Text style={styles.heroText}>
+              Explore unique handmade crafts created by talented artisans,
+              featuring carefully designed products that celebrate creativity
+              and authenticity.
+            </Text>
           </View>
 
-          <Image source={{ uri: heroData.image }} style={styles.heroImage} />
+          <Image
+            source={require("../../assets/images/hero_image.png")}
+            style={styles.heroImage}
+          />
         </View>
 
         {hasError ? (
@@ -246,6 +303,8 @@ export default function HomeScreen() {
                 rating={item.rating}
                 image={getProductImage(item.image)}
                 desc={item.desc || ""}
+                isFavorite={favoriteIds.includes(item.id)}
+                onToggleFavorite={() => handleToggleFavorite(item)}
                 onAdd={() => handleAddToCart(item)}
                 onPressCard={() => goToProductDetails(item.id)}
               />
@@ -284,6 +343,8 @@ export default function HomeScreen() {
                   rating={item.rating}
                   image={getProductImage(item.image)}
                   desc={item.desc || ""}
+                  isFavorite={favoriteIds.includes(item.id)}
+                  onToggleFavorite={() => handleToggleFavorite(item)}
                   onAdd={() => handleAddToCart(item, true)}
                   onPressCard={() => goToProductDetails(item.id)}
                 />
@@ -368,7 +429,7 @@ export default function HomeScreen() {
           <View style={styles.footerDivider} />
 
           <Text style={styles.copyRight}>
-            © 2025 Artisiana. All rights reserved.
+            © 2026 Artisiana. All rights reserved.
           </Text>
         </View>
 

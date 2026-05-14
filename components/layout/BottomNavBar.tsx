@@ -1,6 +1,6 @@
 import { db } from "@/api/firebase";
 import { useAuth } from "@/hooks/useAuth";
-import { Feather, Ionicons } from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
 import type { Href } from "expo-router";
 import { router, usePathname } from "expo-router";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
@@ -13,7 +13,7 @@ export default function BottomNavBar() {
   const [unreadCount, setUnreadCount] = useState(0);
 
   const isHome = pathname === "/(tabs)/home";
-  const isExplore = pathname === "/(tabs)/explore";
+  const isFavorites = pathname === "/(tabs)/favorites";
   const isNotifications = pathname === "/(tabs)/notifications";
   const isProfile = pathname === "/profile";
   const hasUnreadNotifications = unreadCount > 0;
@@ -60,21 +60,21 @@ export default function BottomNavBar() {
 
       <TouchableOpacity
         style={styles.iconButton}
-        onPress={() => router.push("/(tabs)/explore" as Href)}
+        onPress={() => router.push("/(tabs)/favorites" as Href)}
         activeOpacity={0.8}
       >
-        <Ionicons
-          name="grid-outline"
+        <Feather
+          name="heart"
           size={22}
-          color={isExplore ? "#F47C48" : "#C9AFA0"}
+          color={isFavorites ? "#F47C48" : "#C9AFA0"}
         />
       </TouchableOpacity>
 
       <View style={styles.logoCircle}>
         <Image
-          source={require("../../assets/images/brand-logo.png")}
+          source={require("../../assets/images/Logo.png")}
           style={styles.centerLogo}
-          resizeMode="contain"
+          resizeMode="cover"
         />
       </View>
 
@@ -121,24 +121,30 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "#F1E6DF",
   },
+
   iconButton: {
     width: 40,
     height: 40,
     justifyContent: "center",
     alignItems: "center",
   },
+
   logoCircle: {
     width: 52,
     height: 52,
     borderRadius: 26,
+    overflow: "hidden",
     backgroundColor: "#F5E7DE",
     justifyContent: "center",
     alignItems: "center",
   },
+
   centerLogo: {
-    width: 32,
-    height: 32,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
   },
+
   notificationDot: {
     position: "absolute",
     right: 8,

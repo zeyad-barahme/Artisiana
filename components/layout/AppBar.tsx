@@ -22,11 +22,13 @@ export default function AppBar() {
         activeOpacity={0.85}
         onPress={() => router.push("/(tabs)/home" as Href)}
       >
-        <Image
-          source={require("../../assets/images/brand-logo.png")}
-          style={styles.logoImage}
-          resizeMode="contain"
-        />
+        <View style={styles.logoCircle}>
+          <Image
+            source={require("../../assets/images/Logo.png")}
+            style={styles.logoImage}
+            resizeMode="cover"
+          />
+        </View>
       </TouchableOpacity>
 
       <View style={styles.brandSection}>
@@ -92,9 +94,20 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 
+  logoCircle: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    overflow: "hidden",
+    backgroundColor: "#F5E7DE",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
   logoImage: {
     width: 58,
     height: 58,
+    borderRadius: 29,
   },
 
   brandSection: {
