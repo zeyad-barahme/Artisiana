@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import React, { memo } from "react";
 import {
   View,
   Text,
@@ -26,7 +27,7 @@ type Props = {
   onPressCard?: () => void;
 };
 
-export default function ProductCard({
+const ProductCard = memo(function ProductCard({
   title,
   price,
   oldPrice,
@@ -107,7 +108,9 @@ export default function ProductCard({
       </View>
     </View>
   );
-}
+});
+
+export default ProductCard;
 
 const styles = StyleSheet.create({
   card: {
@@ -122,10 +125,7 @@ const styles = StyleSheet.create({
     shadowColor: "#000",
     shadowOpacity: 0.1,
     shadowRadius: 6,
-    shadowOffset: {
-      width: 0,
-      height: 3,
-    },
+    shadowOffset: { width: 0, height: 3 },
   },
 
   image: {

@@ -72,7 +72,7 @@ export default function BottomNavBar() {
 
       <View style={styles.logoCircle}>
         <Image
-          source={require("../../assets/images/Logo.png")}
+          source={require("../../assets/images/logo.png")}
           style={styles.centerLogo}
           resizeMode="cover"
         />

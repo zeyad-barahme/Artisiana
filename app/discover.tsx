@@ -12,7 +12,7 @@ export default function DiscoverScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <Image
-        source={require("../assets/images/brand-logo.png")}
+        source={require("../assets/images/Logo.png")}
         style={styles.logo}
         resizeMode="contain"
       />
