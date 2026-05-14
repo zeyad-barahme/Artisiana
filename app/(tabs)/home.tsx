@@ -8,7 +8,6 @@ import {
   FlatList,
   Image,
   Linking,
-  SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -219,7 +218,7 @@ export default function HomeScreen() {
   const hasError = categoriesError || productsError;
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor={BG} />
 
       <ScrollView
@@ -437,7 +436,7 @@ export default function HomeScreen() {
       </ScrollView>
 
       <BottomNavBar />
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -454,7 +453,7 @@ const styles = StyleSheet.create({
 
   contentContainer: {
     paddingHorizontal: 18,
-    paddingTop: 12,
+    paddingTop: 0,
   },
 
   heroCard: {

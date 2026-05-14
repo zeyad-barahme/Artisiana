@@ -1,8 +1,9 @@
 import { Rancho_400Regular, useFonts } from "@expo-google-fonts/rancho";
 import { useRouter } from "expo-router";
-import { useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Image,
   ScrollView,
   StyleSheet,
@@ -16,6 +17,11 @@ import BottomNavBar from "../../components/layout/BottomNavBar";
 import ProductCard from "../../components/ProductCard1w";
 import { useCart } from "../../hooks/useCart";
 import { useProducts } from "../../hooks/useProducts";
+import {
+  addFavorite,
+  getUserFavorites,
+  removeFavorite,
+} from "../../services/favorites/favorites.service";
 import { notifyCartItemAdded } from "../../services/notifications/notification.service";
 
 const localImages: { [key: string]: any } = {
@@ -32,8 +38,56 @@ export default function Ceramics() {
   const router = useRouter();
   const { addToCart } = useCart();
   const [fontsLoaded] = useFonts({ Rancho_400Regular });
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
 
   const { data: products, isLoading, isError } = useProducts("Ceramics");
+
+  useEffect(() => {
+    const loadFavorites = async () => {
+      const userId = auth.currentUser?.uid;
+
+      if (!userId) return;
+
+      try {
+        const ids = await getUserFavorites(userId);
+        setFavoriteIds(ids);
+      } catch (error) {
+        console.log("Error loading favorites:", error);
+      }
+    };
+
+    loadFavorites();
+  }, []);
+
+  const handleToggleFavorite = useCallback(
+    async (item: any) => {
+      const userId = auth.currentUser?.uid;
+
+      if (!userId) {
+        Alert.alert("Login Required", "Please login to save favorites.");
+        return;
+      }
+
+      const isAlreadyFavorite = favoriteIds.includes(item.id);
+
+      try {
+        if (isAlreadyFavorite) {
+          await removeFavorite(userId, item.id);
+
+          setFavoriteIds((prev) =>
+            prev.filter((productId) => productId !== item.id)
+          );
+        } else {
+          await addFavorite(userId, item);
+
+          setFavoriteIds((prev) => [...prev, item.id]);
+        }
+      } catch (error) {
+        Alert.alert("Error", "Something went wrong. Please try again.");
+      }
+    },
+    [favoriteIds]
+  );
 
   const handleAddToCart = useCallback(
     (item: any) => {
@@ -106,6 +160,8 @@ export default function Ceramics() {
                 localImages[item.image] ||
                 require("../../assets/images/A1/ce1.webp")
               }
+              isFavorite={favoriteIds.includes(item.id)}
+              onToggleFavorite={() => handleToggleFavorite(item)}
               onAdd={() => handleAddToCart(item)}
               onPressCard={() => handlePressCard(item.id)}
             />

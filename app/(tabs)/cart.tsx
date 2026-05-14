@@ -1,5 +1,4 @@
 import { StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import CartList from "../../components/cart/CartList";
 import CartSummary from "../../components/cart/CartSummary";
 import EmptyCart from "../../components/cart/EmptyCart";
@@ -17,10 +16,8 @@ export default function CartScreen() {
   } = useCart();
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
-      <View style={styles.headerWrapper}>
-        <AppBar />
-      </View>
+    <View style={styles.container}>
+      <AppBar />
 
       <View style={styles.content}>
         <Text style={styles.title}>Your Cart</Text>
@@ -42,7 +39,7 @@ export default function CartScreen() {
       </View>
 
       <BottomNavBar />
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -50,13 +47,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#FFF7F3",
-  },
-
-  headerWrapper: {
-    paddingHorizontal: 12,
-    paddingTop: 10,
-    paddingBottom: 10,
-    backgroundColor: "#FFFFFF",
   },
 
   content: {
@@ -67,7 +57,7 @@ const styles = StyleSheet.create({
   title: {
     textAlign: "center",
     fontSize: 35,
-    marginTop: 50,
+    marginTop: 30,
     fontFamily: "Itim_400Regular",
     color: "#000000",
   },

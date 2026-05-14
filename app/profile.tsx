@@ -1,18 +1,19 @@
 import * as ImagePicker from "expo-image-picker";
-import { useRouter, type Href } from "expo-router";
+import { Feather } from "@expo/vector-icons";
+import { useFocusEffect, useRouter, type Href } from "expo-router";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   Image,
+  Modal,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 import { auth } from "@/api/firebase";
 import AppBar from "@/components/layout/AppBar";
@@ -28,6 +29,7 @@ import {
 } from "@/services/user-profile";
 import {
   getOrdersByUser,
+  markOrderAsReceived,
   type CheckoutOrder,
 } from "@/services/orders/checkoutOrder.service";
 import { notifyProfileUpdated } from "@/services/notifications/notification.service";
@@ -77,6 +79,31 @@ export default function Profile() {
   const [orders, setOrders] = useState<CheckoutOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [ordersLoading, setOrdersLoading] = useState(true);
+  const [imagePreviewVisible, setImagePreviewVisible] = useState(false);
+  const [expandedOrderIds, setExpandedOrderIds] = useState<
+    Record<string, boolean>
+  >({});
+
+  const loadOrders = useCallback(async () => {
+    const firebaseUser = auth.currentUser;
+
+    if (!firebaseUser) {
+      setOrders([]);
+      setOrdersLoading(false);
+      return;
+    }
+
+    try {
+      setOrdersLoading(true);
+      const userOrders = await getOrdersByUser(firebaseUser.uid);
+      setOrders(userOrders);
+    } catch (error) {
+      console.log("Error loading orders:", error);
+      setOrders([]);
+    } finally {
+      setOrdersLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -106,7 +133,7 @@ export default function Profile() {
         const localAvatarUri = await getLocalAvatarUri(firebaseUser.uid);
 
         setUser(resolved);
-        setImage(localAvatarUri ?? resolved.imageUrl ?? null);
+        setImage(localAvatarUri || resolved.imageUrl || null);
       } catch (error) {
         console.log("Error loading profile:", error);
         Alert.alert("Error", "Could not load profile data.");
@@ -114,38 +141,88 @@ export default function Profile() {
         setLoading(false);
       }
 
-      try {
-        const userOrders = await getOrdersByUser(firebaseUser.uid);
-        setOrders(userOrders);
-      } catch (ordersError) {
-        console.log("Error loading orders:", ordersError);
-        setOrders([]);
-      } finally {
-        setOrdersLoading(false);
-      }
+      await loadOrders();
     });
 
     return () => unsub();
+  }, [loadOrders]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadOrders();
+    }, [loadOrders])
+  );
+
+  const activeOrders = useMemo(() => {
+    return orders.filter((order) => order.status !== "received");
+  }, [orders]);
+
+  const receivedOrders = useMemo(() => {
+    return orders.filter((order) => order.status === "received");
+  }, [orders]);
+
+  const subscriptionPlan = useMemo(() => {
+    return (user as any)?.subscriptionPlan || "Basic";
+  }, [user]);
+
+  const userInitial = useMemo(() => {
+    return user?.name?.charAt(0)?.toUpperCase() || "U";
+  }, [user?.name]);
+
+  const toggleOrderExpanded = useCallback((orderId: string) => {
+    setExpandedOrderIds((prev) => ({
+      ...prev,
+      [orderId]: !prev[orderId],
+    }));
   }, []);
 
-  const handleImageAsset = async (asset: ImagePicker.ImagePickerAsset) => {
-    if (!user) return;
+  const handleMarkOrderAsReceived = useCallback((order: CheckoutOrder) => {
+    Alert.alert("Confirm received", "Did you receive this order?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Yes, received",
+        onPress: async () => {
+          try {
+            await markOrderAsReceived(order.id);
 
-    const uri = asset.uri;
-    setImage(uri);
+            setOrders((prevOrders) =>
+              prevOrders.map((currentOrder) =>
+                currentOrder.id === order.id
+                  ? { ...currentOrder, status: "received" }
+                  : currentOrder
+              )
+            );
+          } catch (error) {
+            console.log("Error marking order as received:", error);
+            Alert.alert("Error", "Could not update order status.");
+          }
+        },
+      },
+    ]);
+  }, []);
 
-    try {
-      await setLocalAvatarUri(user.uid, uri);
-      await updateUserProfile(user.uid, { imageUrl: uri });
-      await notifyProfileUpdated(user.uid);
-      setUser({ ...user, imageUrl: uri });
-    } catch (error) {
-      console.log("Error updating avatar:", error);
-      Alert.alert("Error", "Could not update profile photo.");
-    }
-  };
+  const handleImageAsset = useCallback(
+    async (asset: ImagePicker.ImagePickerAsset) => {
+      if (!user) return;
 
-  const pickFromGallery = async () => {
+      const uri = asset.uri;
+      setImage(uri);
+      setImagePreviewVisible(false);
+
+      try {
+        await setLocalAvatarUri(user.uid, uri);
+        await updateUserProfile(user.uid, { imageUrl: uri });
+        await notifyProfileUpdated(user.uid);
+        setUser({ ...user, imageUrl: uri });
+      } catch (error) {
+        console.log("Error updating avatar:", error);
+        Alert.alert("Error", "Could not update profile photo.");
+      }
+    },
+    [user]
+  );
+
+  const pickFromGallery = useCallback(async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
     if (!permission.granted) {
@@ -164,9 +241,9 @@ export default function Profile() {
     if (!result.canceled && result.assets?.[0]) {
       await handleImageAsset(result.assets[0]);
     }
-  };
+  }, [handleImageAsset]);
 
-  const pickFromCamera = async () => {
+  const pickFromCamera = useCallback(async () => {
     const permission = await ImagePicker.requestCameraPermissionsAsync();
 
     if (!permission.granted) {
@@ -185,28 +262,61 @@ export default function Profile() {
     if (!result.canceled && result.assets?.[0]) {
       await handleImageAsset(result.assets[0]);
     }
-  };
+  }, [handleImageAsset]);
 
-  const onPressAvatar = () => {
+  const openImagePickerOptions = useCallback(() => {
     Alert.alert("Profile photo", "Choose image source", [
       { text: "Camera", onPress: pickFromCamera },
       { text: "Gallery", onPress: pickFromGallery },
       { text: "Cancel", style: "cancel" },
     ]);
-  };
+  }, [pickFromCamera, pickFromGallery]);
 
-  const handleEditProfile = () => {
-    Alert.alert(
-      "Edit Profile",
-      "Tap your profile picture to change your photo."
-    );
-  };
+  const handleDeletePhoto = useCallback(() => {
+    if (!user) return;
 
-  const handleChangePassword = () => {
+    Alert.alert("Delete photo", "Are you sure you want to delete this photo?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            setImage(null);
+            setImagePreviewVisible(false);
+
+            await setLocalAvatarUri(user.uid, "");
+            await updateUserProfile(user.uid, { imageUrl: null });
+            await notifyProfileUpdated(user.uid);
+
+            setUser({ ...user, imageUrl: null });
+          } catch (error) {
+            console.log("Error deleting avatar:", error);
+            Alert.alert("Error", "Could not delete profile photo.");
+          }
+        },
+      },
+    ]);
+  }, [user]);
+
+  const onPressAvatar = useCallback(() => {
+    if (image) {
+      setImagePreviewVisible(true);
+      return;
+    }
+
+    openImagePickerOptions();
+  }, [image, openImagePickerOptions]);
+
+  const handleEditProfile = useCallback(() => {
+    openImagePickerOptions();
+  }, [openImagePickerOptions]);
+
+  const handleChangePassword = useCallback(() => {
     Alert.alert("Change Password", "This feature will be added soon.");
-  };
+  }, []);
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     Alert.alert("Logout", "Are you sure you want to logout?", [
       { text: "Cancel", style: "cancel" },
       {
@@ -218,7 +328,97 @@ export default function Profile() {
         },
       },
     ]);
-  };
+  }, [router]);
+
+  const renderOrderCard = useCallback(
+    (order: CheckoutOrder, index: number) => {
+      const items = order.items || [];
+      const itemsCount = items.length;
+      const isReceived = order.status === "received";
+      const isExpanded = !!expandedOrderIds[order.id];
+
+      return (
+        <View key={order.id} style={styles.orderCard}>
+          <TouchableOpacity
+            style={styles.orderSummary}
+            onPress={() => toggleOrderExpanded(order.id)}
+            activeOpacity={0.82}
+          >
+            <View style={styles.orderSummaryLeft}>
+              <Text style={styles.orderNumber}>Order #{index + 1}</Text>
+
+              <Text style={styles.orderDetails}>
+                Items: {itemsCount} • Total: $
+                {Number(order.total || 0).toFixed(2)}
+              </Text>
+            </View>
+
+            <View style={styles.orderSummaryRight}>
+              <Text
+                style={[
+                  styles.orderStatus,
+                  isReceived && styles.receivedStatusText,
+                ]}
+              >
+                {order.status || "submitted"}
+              </Text>
+
+              <Feather
+                name={isExpanded ? "chevron-up" : "chevron-down"}
+                size={22}
+                color="#777"
+              />
+            </View>
+          </TouchableOpacity>
+
+          {isExpanded ? (
+            <View style={styles.orderExpandedContent}>
+              {!isReceived ? (
+                <TouchableOpacity
+                  style={styles.receivedButton}
+                  onPress={() => handleMarkOrderAsReceived(order)}
+                  activeOpacity={0.85}
+                >
+                  <Text style={styles.receivedButtonText}>
+                    Mark as received
+                  </Text>
+                </TouchableOpacity>
+              ) : (
+                <View style={styles.receivedBadge}>
+                  <Text style={styles.receivedBadgeText}>Received</Text>
+                </View>
+              )}
+
+              {items.map((item) => (
+                <View key={item.id} style={styles.orderItemRow}>
+                  <View style={styles.orderItemImageBox}>
+                    <Image
+                      source={getOrderImageSource(item.image)}
+                      style={styles.orderItemImage}
+                      resizeMode="cover"
+                    />
+
+                    <View style={styles.quantityBadge}>
+                      <Text style={styles.quantityText}>{item.quantity}x</Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.orderItemInfo}>
+                    <Text style={styles.orderItemTitle}>{item.title}</Text>
+
+                    <Text style={styles.orderItemPrice}>
+                      ${Number(item.price || 0).toFixed(2)}
+                    </Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          ) : null}
+        </View>
+      );
+    },
+    [expandedOrderIds, handleMarkOrderAsReceived, toggleOrderExpanded]
+  );
 
   if (loading) {
     return (
@@ -244,11 +444,8 @@ export default function Profile() {
     );
   }
 
-  const userInitial = user.name?.charAt(0)?.toUpperCase() || "U";
-  const subscriptionPlan = (user as any).subscriptionPlan || "Basic";
-
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <View style={styles.page}>
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -283,62 +480,28 @@ export default function Profile() {
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>My Orders</Text>
+            <Text style={styles.sectionTitle}>Active Orders</Text>
 
             {ordersLoading ? (
               <Text style={styles.sectionText}>Loading orders...</Text>
-            ) : orders.length === 0 ? (
-              <Text style={styles.sectionText}>No orders yet.</Text>
+            ) : activeOrders.length === 0 ? (
+              <Text style={styles.sectionText}>No active orders.</Text>
             ) : (
-              orders.map((order, index) => {
-                const items = order.items || [];
-                const itemsCount = items.length;
+              activeOrders.map((order, index) => renderOrderCard(order, index))
+            )}
+          </View>
 
-                return (
-                  <View key={order.id} style={styles.orderCard}>
-                    <View style={styles.orderTopRow}>
-                      <Text style={styles.orderNumber}>Order #{index + 1}</Text>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Received Orders</Text>
 
-                      <Text style={styles.orderStatus}>
-                        {order.status || "submitted"}
-                      </Text>
-                    </View>
-
-                    <Text style={styles.orderDetails}>
-                      Items: {itemsCount} • Total: $
-                      {Number(order.total || 0).toFixed(2)}
-                    </Text>
-
-                    {items.map((item) => (
-                      <View key={item.id} style={styles.orderItemRow}>
-                        <View style={styles.orderItemImageBox}>
-                          <Image
-                            source={getOrderImageSource(item.image)}
-                            style={styles.orderItemImage}
-                            resizeMode="cover"
-                          />
-
-                          <View style={styles.quantityBadge}>
-                            <Text style={styles.quantityText}>
-                              {item.quantity}x
-                            </Text>
-                          </View>
-                        </View>
-
-                        <View style={styles.orderItemInfo}>
-                          <Text style={styles.orderItemTitle}>
-                            {item.title}
-                          </Text>
-
-                          <Text style={styles.orderItemPrice}>
-                            ${Number(item.price || 0).toFixed(2)}
-                          </Text>
-                        </View>
-                      </View>
-                    ))}
-                  </View>
-                );
-              })
+            {ordersLoading ? (
+              <Text style={styles.sectionText}>Loading orders...</Text>
+            ) : receivedOrders.length === 0 ? (
+              <Text style={styles.sectionText}>No received orders yet.</Text>
+            ) : (
+              receivedOrders.map((order, index) =>
+                renderOrderCard(order, index)
+              )
             )}
           </View>
 
@@ -374,7 +537,53 @@ export default function Profile() {
 
         <BottomNavBar />
       </View>
-    </SafeAreaView>
+
+      <Modal
+        visible={imagePreviewVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setImagePreviewVisible(false)}
+      >
+        <View style={styles.imageModalOverlay}>
+          <TouchableOpacity
+            style={styles.imageModalCloseArea}
+            activeOpacity={1}
+            onPress={() => setImagePreviewVisible(false)}
+          />
+
+          <View style={styles.imageModalContent}>
+            {image ? (
+              <Image source={{ uri: image }} style={styles.previewImage} />
+            ) : null}
+
+            <Text style={styles.previewName}>{user.name || "User"}</Text>
+
+            <View style={styles.previewActions}>
+              <TouchableOpacity
+                style={styles.previewButton}
+                onPress={openImagePickerOptions}
+              >
+                <Text style={styles.previewButtonText}>Change Photo</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.previewButton, styles.deletePreviewButton]}
+                onPress={handleDeletePhoto}
+              >
+                <Text style={styles.deletePreviewButtonText}>Delete Photo</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.closePreviewButton}
+                onPress={() => setImagePreviewVisible(false)}
+              >
+                <Text style={styles.closePreviewButtonText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </View>
   );
 }
 
@@ -391,7 +600,7 @@ const styles = StyleSheet.create({
 
   scrollContent: {
     paddingHorizontal: 18,
-    paddingTop: 12,
+    paddingTop: 0,
     paddingBottom: 100,
   },
 
@@ -507,40 +716,49 @@ const styles = StyleSheet.create({
 
   sectionTitle: {
     fontSize: 22,
-    fontWeight: "500",
+    fontWeight: "700",
     color: "#222",
     marginBottom: 14,
   },
 
   sectionText: {
     fontSize: 15,
-    color: "#333",
+    color: "#777",
     marginBottom: 12,
   },
 
   orderCard: {
-    paddingVertical: 14,
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: "#EFE2DD",
   },
 
-  orderTopRow: {
+  orderSummary: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 6,
+  },
+
+  orderSummaryLeft: {
+    flex: 1,
+    paddingRight: 10,
+  },
+
+  orderSummaryRight: {
+    alignItems: "flex-end",
+    gap: 6,
   },
 
   orderNumber: {
-    fontSize: 15,
+    fontSize: 17,
     color: "#222",
-    fontWeight: "700",
+    fontWeight: "800",
+    marginBottom: 5,
   },
 
   orderDetails: {
     fontSize: 13,
     color: "#777",
-    marginBottom: 10,
   },
 
   orderStatus: {
@@ -548,6 +766,44 @@ const styles = StyleSheet.create({
     color: "#F47C4C",
     fontWeight: "800",
     textTransform: "capitalize",
+  },
+
+  receivedStatusText: {
+    color: "#2F8F46",
+  },
+
+  orderExpandedContent: {
+    marginTop: 12,
+  },
+
+  receivedButton: {
+    alignSelf: "flex-start",
+    backgroundColor: "#F47C4C",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 10,
+    marginBottom: 8,
+  },
+
+  receivedButtonText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "800",
+  },
+
+  receivedBadge: {
+    alignSelf: "flex-start",
+    backgroundColor: "#EEF9F1",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 10,
+    marginBottom: 8,
+  },
+
+  receivedBadgeText: {
+    color: "#2F8F46",
+    fontSize: 13,
+    fontWeight: "800",
   },
 
   orderItemRow: {
@@ -578,7 +834,7 @@ const styles = StyleSheet.create({
   orderItemTitle: {
     fontSize: 14,
     color: "#333",
-    fontWeight: "600",
+    fontWeight: "700",
     marginBottom: 4,
   },
 
@@ -652,5 +908,81 @@ const styles = StyleSheet.create({
 
   bottomSpacing: {
     height: 70,
+  },
+
+  imageModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.82)",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 24,
+  },
+
+  imageModalCloseArea: {
+    ...StyleSheet.absoluteFillObject,
+  },
+
+  imageModalContent: {
+    width: "100%",
+    alignItems: "center",
+  },
+
+  previewImage: {
+    width: 260,
+    height: 260,
+    borderRadius: 130,
+    borderWidth: 4,
+    borderColor: "#FFFFFF",
+    backgroundColor: "#222",
+  },
+
+  previewName: {
+    marginTop: 18,
+    color: "#FFFFFF",
+    fontSize: 22,
+    fontWeight: "800",
+  },
+
+  previewActions: {
+    width: "100%",
+    marginTop: 28,
+  },
+
+  previewButton: {
+    backgroundColor: "#F47C4C",
+    paddingVertical: 13,
+    borderRadius: 16,
+    alignItems: "center",
+    marginBottom: 10,
+  },
+
+  previewButtonText: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "800",
+  },
+
+  deletePreviewButton: {
+    backgroundColor: "#FFFFFF",
+  },
+
+  deletePreviewButtonText: {
+    color: "#D93434",
+    fontSize: 15,
+    fontWeight: "800",
+  },
+
+  closePreviewButton: {
+    paddingVertical: 13,
+    borderRadius: 16,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#FFFFFF",
+  },
+
+  closePreviewButtonText: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "800",
   },
 });

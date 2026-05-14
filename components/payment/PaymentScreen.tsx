@@ -1,5 +1,6 @@
 import { auth } from "@/api/firebase";
 import { useCart } from "@/hooks/useCart";
+import { notifyOrderPlaced } from "@/services/notifications/notification.service";
 import { createCheckoutOrder } from "@/services/orders/checkoutOrder.service";
 import { useMutation } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -14,6 +15,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+
 import CheckoutHeader from "../checkout/CheckoutHeader";
 import CheckoutButton from "../shared/CheckoutButton";
 import { CheckoutProgress } from "../shared/CheckoutProgress";
@@ -69,6 +71,7 @@ function PaymentContent({
       }
 
       const orderTotal = total;
+      const userId = auth.currentUser?.uid ?? null;
 
       const orderItems = cartItems.map((item) => ({
         id: item.id,
@@ -78,7 +81,7 @@ function PaymentContent({
         image: item.image ?? "",
       }));
 
-      await createCheckoutOrder({
+      const orderId = await createCheckoutOrder({
         total: orderTotal,
         items: orderItems,
         customer: {
@@ -92,8 +95,16 @@ function PaymentContent({
           cardholderName: cleanedPayment.cardholderName,
           expireDate: cleanedPayment.expireDate,
         },
-        userId: auth.currentUser?.uid ?? null,
+        userId,
       });
+
+      if (userId) {
+        await notifyOrderPlaced({
+          userId,
+          orderId,
+          total: orderTotal,
+        });
+      }
 
       await clearCart();
 
@@ -116,7 +127,7 @@ function PaymentContent({
       if (errorMessage === "Missing checkout details") {
         Alert.alert(
           "Missing Checkout Details",
-          "Please go back and fill in all checkout details.",
+          "Please go back and fill in all checkout details."
         );
         return;
       }
@@ -130,7 +141,7 @@ function PaymentContent({
 
       Alert.alert(
         "Order Error",
-        "Could not save your order. Please try again.",
+        "Could not save your order. Please try again."
       );
     },
   });
@@ -173,7 +184,7 @@ function PaymentContent({
 
           <View style={styles.buttonContainer}>
             <CheckoutButton
-              title={isSaving ? "Saving..." : "Pay"}
+              title={createOrderMutation.isPending ? "Saving..." : "Pay"}
               onPress={handleSubmit(handlePay)}
             />
           </View>

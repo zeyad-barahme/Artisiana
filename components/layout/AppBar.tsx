@@ -10,13 +10,24 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function AppBar() {
   const { totalItems } = useCart();
   const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
 
   return (
-    <View style={[styles.wrapper, { width }]}>
+    <View
+      style={[
+        styles.wrapper,
+        {
+          width,
+          height: 78 + insets.top,
+          paddingTop: insets.top + 8,
+        },
+      ]}
+    >
       <TouchableOpacity
         style={styles.logoSection}
         activeOpacity={0.85}
@@ -70,11 +81,9 @@ export default function AppBar() {
 
 const styles = StyleSheet.create({
   wrapper: {
-    height: 86,
     backgroundColor: "#FFFFFF",
     alignSelf: "center",
     paddingHorizontal: 18,
-    paddingTop: 8,
     paddingBottom: 8,
     flexDirection: "row",
     alignItems: "center",

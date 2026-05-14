@@ -18,7 +18,6 @@ type CreateNotificationInput = {
   type: NotificationType;
   relatedScreen?: string;
   relatedId?: string;
-  time?: string;
 };
 
 export async function createNotification({
@@ -28,7 +27,6 @@ export async function createNotification({
   type,
   relatedScreen = "",
   relatedId = "",
-  time = "Just now",
 }: CreateNotificationInput) {
   await addDoc(collection(db, "notifications"), {
     userId,
@@ -38,7 +36,6 @@ export async function createNotification({
     isRead: false,
     relatedScreen,
     relatedId,
-    time,
     createdAt: serverTimestamp(),
   });
 }
@@ -62,7 +59,9 @@ export async function notifyOrderPlaced(input: {
   await createNotification({
     userId: input.userId,
     title: "Order placed",
-    message: `Your order was placed successfully. Total: $${input.total.toFixed(2)}.`,
+    message: `Your order was placed successfully. Total: $${input.total.toFixed(
+      2
+    )}.`,
     type: "order",
     relatedScreen: "orders",
     relatedId: input.orderId,

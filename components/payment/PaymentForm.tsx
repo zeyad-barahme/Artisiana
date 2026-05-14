@@ -2,6 +2,7 @@ import type { RefObject } from "react";
 import type { Control, FieldErrors } from "react-hook-form";
 import { Controller } from "react-hook-form";
 import { StyleSheet, TextInput, View } from "react-native";
+
 import CheckoutInput from "../shared/CheckoutInput";
 import {
   formatCardNumber,
@@ -31,7 +32,6 @@ type PaymentFormProps = {
 
 export default function PaymentForm({
   control,
-  errors,
   formatExpireDate,
   cardNumberRef,
   cardholderNameRef,
@@ -46,15 +46,17 @@ export default function PaymentForm({
         rules={{
           validate: validateCardNumberField,
         }}
-        render={({ field: { value, onChange } }) => (
+        render={({ field: { value, onChange }, fieldState: { error } }) => (
           <CheckoutInput
             ref={cardNumberRef}
             label="Card Number"
             placeholder="Enter card number"
             value={value}
-            onChangeText={(text) => onChange(formatCardNumber(text))}
+            onChangeText={(text) => {
+              onChange(formatCardNumber(text));
+            }}
             keyboardType="numeric"
-            errorMessage={errors.cardNumber?.message}
+            errorMessage={error?.message}
           />
         )}
       />
@@ -65,14 +67,14 @@ export default function PaymentForm({
         rules={{
           validate: validateCardholderNameField,
         }}
-        render={({ field: { value, onChange } }) => (
+        render={({ field: { value, onChange }, fieldState: { error } }) => (
           <CheckoutInput
             ref={cardholderNameRef}
             label="Cardholder Name"
             placeholder="Enter cardholder name"
             value={value}
             onChangeText={onChange}
-            errorMessage={errors.cardholderName?.message}
+            errorMessage={error?.message}
           />
         )}
       />
@@ -85,15 +87,17 @@ export default function PaymentForm({
             rules={{
               validate: validateExpireDateField,
             }}
-            render={({ field: { value, onChange } }) => (
+            render={({ field: { value, onChange }, fieldState: { error } }) => (
               <CheckoutInput
                 ref={expireDateRef}
                 label="Expire date"
                 placeholder="MM / YY"
                 value={value}
-                onChangeText={(text) => onChange(formatExpireDate(text))}
+                onChangeText={(text) => {
+                  onChange(formatExpireDate(text));
+                }}
                 keyboardType="numeric"
-                errorMessage={errors.expireDate?.message}
+                errorMessage={error?.message}
               />
             )}
           />
@@ -106,15 +110,17 @@ export default function PaymentForm({
             rules={{
               validate: validateCvcField,
             }}
-            render={({ field: { value, onChange } }) => (
+            render={({ field: { value, onChange }, fieldState: { error } }) => (
               <CheckoutInput
                 ref={cvcRef}
                 label="CVC"
                 placeholder="Enter CVC"
                 value={value}
-                onChangeText={(text) => onChange(formatCvc(text))}
+                onChangeText={(text) => {
+                  onChange(formatCvc(text));
+                }}
                 keyboardType="numeric"
-                errorMessage={errors.cvc?.message}
+                errorMessage={error?.message}
               />
             )}
           />
