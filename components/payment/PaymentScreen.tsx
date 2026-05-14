@@ -1,8 +1,9 @@
 import { auth } from "@/api/firebase";
 import { useCart } from "@/hooks/useCart";
 import { createCheckoutOrder } from "@/services/orders/checkoutOrder.service";
+import { useMutation } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { useForm } from "react-hook-form";
 import {
   Alert,
@@ -36,8 +37,6 @@ function PaymentContent({
   const { total, cartItems, clearCart } = useCart();
   const router = useRouter();
 
-  const [isSaving, setIsSaving] = useState(false);
-
   const {
     control,
     handleSubmit,
@@ -57,29 +56,18 @@ function PaymentContent({
   const expireDateRef = useRef<TextInput>(null);
   const cvcRef = useRef<TextInput>(null);
 
-  const handlePay = async (values: PaymentFormValues) => {
-    if (isSaving) {
-      return;
-    }
+  const createOrderMutation = useMutation({
+    mutationFn: async (values: PaymentFormValues) => {
+      const cleanedPayment = cleanPaymentDetails(values);
 
-    const cleanedPayment = cleanPaymentDetails(values);
+      if (!fullName || !phoneNumber || !address || !city) {
+        throw new Error("Missing checkout details");
+      }
 
-    if (!fullName || !phoneNumber || !address || !city) {
-      Alert.alert(
-        "Missing Checkout Details",
-        "Please go back and fill in all checkout details.",
-      );
-      return;
-    }
+      if (!cartItems || cartItems.length === 0) {
+        throw new Error("Empty cart");
+      }
 
-    if (!cartItems || cartItems.length === 0) {
-      Alert.alert("Empty Cart", "Your cart is empty.");
-      return;
-    }
-
-    setIsSaving(true);
-
-    try {
       const orderTotal = total;
 
       const orderItems = cartItems.map((item) => ({
@@ -109,22 +97,50 @@ function PaymentContent({
 
       await clearCart();
 
+      return orderTotal;
+    },
+
+    onSuccess: (orderTotal) => {
       router.replace({
         pathname: "/success",
         params: {
           total: orderTotal.toString(),
         },
       } as any);
-    } catch (error) {
+    },
+
+    onError: (error) => {
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+
+      if (errorMessage === "Missing checkout details") {
+        Alert.alert(
+          "Missing Checkout Details",
+          "Please go back and fill in all checkout details.",
+        );
+        return;
+      }
+
+      if (errorMessage === "Empty cart") {
+        Alert.alert("Empty Cart", "Your cart is empty.");
+        return;
+      }
+
       console.error("Failed to save order:", error);
 
       Alert.alert(
         "Order Error",
         "Could not save your order. Please try again.",
       );
-    } finally {
-      setIsSaving(false);
+    },
+  });
+
+  const handlePay = (values: PaymentFormValues) => {
+    if (createOrderMutation.isPending) {
+      return;
     }
+
+    createOrderMutation.mutate(values);
   };
 
   return (
