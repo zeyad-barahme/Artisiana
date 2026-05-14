@@ -6,7 +6,13 @@ import {
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { StyleSheet, View } from "react-native";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
 import CheckoutButton from "../shared/CheckoutButton";
 import CheckoutInput from "../shared/CheckoutInput";
 import { CheckoutProgress } from "../shared/CheckoutProgress";
@@ -107,86 +113,96 @@ export default function CheckoutDetails() {
   };
 
   return (
-    <View style={styles.container}>
-      <CheckoutHeader backTo="/cart" />
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 20 : 0}
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <CheckoutHeader backTo="/cart" />
 
-      <CheckoutProgress step={1} />
+        <CheckoutProgress step={1} />
 
-      <View style={styles.form}>
-        <Controller
-          control={control}
-          name="fullName"
-          rules={{
-            validate: validateFullNameField,
-          }}
-          render={({ field: { value, onChange } }) => (
-            <CheckoutInput
-              label="Full Name"
-              placeholder="Enter full name"
-              value={value}
-              onChangeText={onChange}
-              errorMessage={errors.fullName?.message}
-            />
-          )}
-        />
+        <View style={styles.form}>
+          <Controller
+            control={control}
+            name="fullName"
+            rules={{
+              validate: validateFullNameField,
+            }}
+            render={({ field: { value, onChange } }) => (
+              <CheckoutInput
+                label="Full Name"
+                placeholder="Enter full name"
+                value={value}
+                onChangeText={onChange}
+                errorMessage={errors.fullName?.message}
+              />
+            )}
+          />
 
-        <Controller
-          control={control}
-          name="phoneNumber"
-          rules={{
-            validate: validatePhoneNumberField,
-          }}
-          render={({ field: { value, onChange } }) => (
-            <CheckoutInput
-              label="Phone Number"
-              placeholder="Enter phone number"
-              value={value}
-              onChangeText={onChange}
-              keyboardType="phone-pad"
-              errorMessage={errors.phoneNumber?.message}
-            />
-          )}
-        />
+          <Controller
+            control={control}
+            name="phoneNumber"
+            rules={{
+              validate: validatePhoneNumberField,
+            }}
+            render={({ field: { value, onChange } }) => (
+              <CheckoutInput
+                label="Phone Number"
+                placeholder="Enter phone number"
+                value={value}
+                onChangeText={onChange}
+                keyboardType="phone-pad"
+                errorMessage={errors.phoneNumber?.message}
+              />
+            )}
+          />
 
-        <Controller
-          control={control}
-          name="address"
-          rules={{
-            validate: validateAddressField,
-          }}
-          render={({ field: { value, onChange } }) => (
-            <CheckoutInput
-              label="Address"
-              placeholder="Enter address"
-              value={value}
-              onChangeText={onChange}
-              errorMessage={errors.address?.message}
-            />
-          )}
-        />
+          <Controller
+            control={control}
+            name="address"
+            rules={{
+              validate: validateAddressField,
+            }}
+            render={({ field: { value, onChange } }) => (
+              <CheckoutInput
+                label="Address"
+                placeholder="Enter address"
+                value={value}
+                onChangeText={onChange}
+                errorMessage={errors.address?.message}
+              />
+            )}
+          />
 
-        <Controller
-          control={control}
-          name="city"
-          rules={{
-            validate: validateCityField,
-          }}
-          render={({ field: { value, onChange } }) => (
-            <CheckoutInput
-              label="City"
-              placeholder="Enter city"
-              value={value}
-              onChangeText={onChange}
-              errorMessage={errors.city?.message}
-            />
-          )}
-        />
-      </View>
+          <Controller
+            control={control}
+            name="city"
+            rules={{
+              validate: validateCityField,
+            }}
+            render={({ field: { value, onChange } }) => (
+              <CheckoutInput
+                label="City"
+                placeholder="Enter city"
+                value={value}
+                onChangeText={onChange}
+                errorMessage={errors.city?.message}
+              />
+            )}
+          />
+        </View>
 
-      <View style={styles.buttonContainer}>
-        <CheckoutButton title="Submit" onPress={handleSubmit(onSubmit)} />
-      </View>
-    </View>
+        <View style={styles.buttonContainer}>
+          <CheckoutButton title="Submit" onPress={handleSubmit(onSubmit)} />
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -194,6 +210,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#FFFFFF",
+  },
+
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 40,
   },
 
   form: {
@@ -204,5 +225,6 @@ const styles = StyleSheet.create({
   buttonContainer: {
     marginTop: 70,
     alignItems: "center",
+    paddingBottom: 30,
   },
 });
