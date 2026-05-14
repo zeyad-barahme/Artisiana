@@ -23,7 +23,7 @@ export default function AppBar() {
         onPress={() => router.push("/(tabs)/home" as Href)}
       >
         <Image
-          source={require("../../assets/images/Logo.png")}
+          source={require("../../assets/images/brand-logo.png")}
           style={styles.logoImage}
           resizeMode="contain"
         />

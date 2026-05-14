@@ -13,8 +13,9 @@ import {
   View,
 } from "react-native";
 import { Appbar } from "react-native-paper";
-import { db } from "../../api/firebase";
+import { auth, db } from "../../api/firebase";
 import { useCart } from "../../hooks/useCart";
+import { notifyCartItemAdded } from "../../services/notifications/notification.service";
 
 const localImages: { [key: string]: any } = {
   a: require("../../assets/images/A1/a.webp"),
@@ -107,6 +108,16 @@ export default function ProductDetails() {
       image: product.image,
       quantity: 1,
     });
+
+    const userId = auth.currentUser?.uid;
+
+    if (userId) {
+      void notifyCartItemAdded({
+        userId,
+        productId: product.id,
+        productTitle: product.title,
+      });
+    }
 
     Alert.alert("تمت الإضافة", "تم إضافة المنتج إلى سلة المشتريات بنجاح!", [
       { text: "متابعة التسوق", style: "cancel" },

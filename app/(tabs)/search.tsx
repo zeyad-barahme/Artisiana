@@ -17,6 +17,8 @@ import ProductCard1w from "../../components/ProductCard1w";
 import BottomNavBar from "../../components/layout/BottomNavBar";
 import { useCart } from "../../hooks/useCart";
 import { Product, useProducts } from "../../hooks/useHomeData";
+import { auth } from "../../api/firebase";
+import { notifyCartItemAdded } from "../../services/notifications/notification.service";
 
 const BG = "#FFF7F3";
 const PRIMARY = "#F47C48";
@@ -106,6 +108,16 @@ export default function SearchScreen() {
         image: item.image,
         quantity: 1,
       });
+
+      const userId = auth.currentUser?.uid;
+
+      if (userId) {
+        void notifyCartItemAdded({
+          userId,
+          productId: item.id,
+          productTitle: item.title,
+        });
+      }
 
       Alert.alert("Added", "Product added to cart successfully.");
     },

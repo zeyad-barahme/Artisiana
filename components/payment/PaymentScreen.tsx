@@ -1,5 +1,9 @@
 import { auth } from "@/api/firebase";
 import { useCart } from "@/hooks/useCart";
+import {
+  notifyOrderPlaced,
+  notifyPaymentReceived,
+} from "@/services/notifications/notification.service";
 import { createCheckoutOrder } from "@/services/orders/checkoutOrder.service";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useRef, useState } from "react";
@@ -82,7 +86,9 @@ function PaymentContent({
         image: item.image ?? "",
       }));
 
-      await createCheckoutOrder({
+      const userId = auth.currentUser?.uid ?? null;
+
+      const orderId = await createCheckoutOrder({
         total: orderTotal,
         items: orderItems,
         customer: {
@@ -96,8 +102,22 @@ function PaymentContent({
           cardholderName: cleanedPayment.cardholderName,
           expireDate: cleanedPayment.expireDate,
         },
-        userId: auth.currentUser?.uid ?? null,
+        userId,
       });
+
+      if (userId) {
+        await notifyOrderPlaced({
+          userId,
+          orderId,
+          total: orderTotal,
+        });
+
+        await notifyPaymentReceived({
+          userId,
+          orderId,
+          total: orderTotal,
+        });
+      }
 
       await clearCart();
 

@@ -28,6 +28,11 @@ import {
   useCategories,
   useProducts,
 } from "../../hooks/useHomeData";
+import { auth } from "../../api/firebase";
+import {
+  notifyCartItemAdded,
+  notifyOfferAddedToCart,
+} from "../../services/notifications/notification.service";
 
 const BG = "#FFF7F3";
 const TEXT = "#222222";
@@ -124,6 +129,18 @@ export default function HomeScreen() {
         image: item.image,
         quantity: 1,
       });
+
+      const userId = auth.currentUser?.uid;
+
+      if (userId) {
+        const notify = isOffer ? notifyOfferAddedToCart : notifyCartItemAdded;
+
+        void notify({
+          userId,
+          productId: item.id,
+          productTitle: item.title,
+        });
+      }
 
       Alert.alert("Added", "Product added to cart successfully.");
     },

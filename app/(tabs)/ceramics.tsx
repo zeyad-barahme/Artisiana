@@ -11,7 +11,8 @@ import {
   Alert,
 } from "react-native";
 import { collection, query, where, getDocs } from "firebase/firestore";
-import { db } from "../../api/firebase";
+import { auth, db } from "../../api/firebase";
+import { notifyCartItemAdded } from "../../services/notifications/notification.service";
 
 import AppBar from "../../components/layout/AppBar";
 import ProductCard from "../../components/ProductCard1w";
@@ -70,6 +71,16 @@ export default function Ceramics() {
       image: item.image,
       quantity: 1,
     });
+
+    const userId = auth.currentUser?.uid;
+
+    if (userId) {
+      void notifyCartItemAdded({
+        userId,
+        productId: item.id,
+        productTitle: item.title,
+      });
+    }
 
     Alert.alert("Added", "Product added to cart successfully.");
   };
