@@ -30,7 +30,7 @@ export default function CartSummary({ total }: any) {
 const styles = StyleSheet.create({
   container: {
     position: "absolute",
-    bottom: 68,
+    bottom: 65,
     left: 0,
     right: 0,
 

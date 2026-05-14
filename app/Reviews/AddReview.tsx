@@ -3,6 +3,7 @@ import ReviewScreenHeader from "@/components/reviews/review-screen-header";
 import ReviewScreenShell from "@/components/reviews/review-screen-shell";
 import StarRating from "@/components/reviews/star-rating";
 import type { AddReviewForm, ReviewPayload } from "@/components/reviews/types";
+import { notifyReviewSubmitted } from "@/services/notifications/notification.service";
 import { createReview } from "@/services/reviews/reviews.service";
 import { useLocalSearchParams } from "expo-router";
 import { doc, getDoc } from "firebase/firestore";
@@ -107,6 +108,14 @@ export default function AddReview() {
       };
 
       await createReview(payload);
+
+      if (auth.currentUser) {
+        await notifyReviewSubmitted({
+          userId: auth.currentUser.uid,
+          productId,
+          rating: form.rating,
+        });
+      }
 
       setForm(initialFormState);
 

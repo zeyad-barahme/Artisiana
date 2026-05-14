@@ -12,13 +12,13 @@ export default function DiscoverScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <Image
-        source={require("../assets/images/logo.png")}
+        source={require("../assets/images/Logo.png")}
         style={styles.logo}
         resizeMode="contain"
       />
 
       <Text style={styles.text}>
-        We’re glad to have you back. Start exploring now.
+        We're glad to have you back. Start exploring now.
       </Text>
 
       <TouchableOpacity style={styles.button} onPress={handleContinue}>

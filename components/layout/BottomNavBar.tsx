@@ -1,14 +1,52 @@
-import { Feather, Ionicons } from "@expo/vector-icons";
+import { db } from "@/api/firebase";
+import { useAuth } from "@/hooks/useAuth";
+import { Feather } from "@expo/vector-icons";
 import type { Href } from "expo-router";
 import { router, usePathname } from "expo-router";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { useEffect, useState } from "react";
 import { Image, StyleSheet, TouchableOpacity, View } from "react-native";
 
 export default function BottomNavBar() {
   const pathname = usePathname();
+  const { user, isLoading } = useAuth();
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const isHome = pathname === "/(tabs)/home";
-  const isExplore = pathname === "/(tabs)/explore";
+  const isFavorites = pathname === "/(tabs)/favorites";
+  const isNotifications = pathname === "/(tabs)/notifications";
   const isProfile = pathname === "/profile";
+  const hasUnreadNotifications = unreadCount > 0;
+
+  useEffect(() => {
+    if (isLoading) {
+      return;
+    }
+
+    if (!user) {
+      setUnreadCount(0);
+      return;
+    }
+
+    const unreadNotificationsQuery = query(
+      collection(db, "notifications"),
+      where("userId", "==", user.uid),
+      where("isRead", "==", false)
+    );
+
+    const unsubscribe = onSnapshot(
+      unreadNotificationsQuery,
+      (snapshot) => {
+        setUnreadCount(snapshot.size);
+      },
+      (error) => {
+        console.error("Failed to listen for unread notifications:", error);
+        setUnreadCount(0);
+      }
+    );
+
+    return unsubscribe;
+  }, [isLoading, user]);
 
   return (
     <View style={styles.wrapper}>
@@ -22,13 +60,13 @@ export default function BottomNavBar() {
 
       <TouchableOpacity
         style={styles.iconButton}
-        onPress={() => router.push("/(tabs)/explore" as Href)}
+        onPress={() => router.push("/(tabs)/favorites" as Href)}
         activeOpacity={0.8}
       >
-        <Ionicons
-          name="grid-outline"
+        <Feather
+          name="heart"
           size={22}
-          color={isExplore ? "#F47C48" : "#C9AFA0"}
+          color={isFavorites ? "#F47C48" : "#C9AFA0"}
         />
       </TouchableOpacity>
 
@@ -36,12 +74,21 @@ export default function BottomNavBar() {
         <Image
           source={require("../../assets/images/logo.png")}
           style={styles.centerLogo}
-          resizeMode="contain"
+          resizeMode="cover"
         />
       </View>
 
-      <TouchableOpacity style={styles.iconButton} activeOpacity={0.8}>
-        <Feather name="bell" size={21} color="#C9AFA0" />
+      <TouchableOpacity
+        style={styles.iconButton}
+        activeOpacity={0.8}
+        onPress={() => router.push("/(tabs)/notifications" as Href)}
+      >
+        <Feather
+          name="bell"
+          size={21}
+          color={isNotifications ? "#F47C48" : "#C9AFA0"}
+        />
+        {hasUnreadNotifications ? <View style={styles.notificationDot} /> : null}
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -74,22 +121,39 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "#F1E6DF",
   },
+
   iconButton: {
     width: 40,
     height: 40,
     justifyContent: "center",
     alignItems: "center",
   },
+
   logoCircle: {
     width: 52,
     height: 52,
     borderRadius: 26,
+    overflow: "hidden",
     backgroundColor: "#F5E7DE",
     justifyContent: "center",
     alignItems: "center",
   },
+
   centerLogo: {
-    width: 32,
-    height: 32,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+  },
+
+  notificationDot: {
+    position: "absolute",
+    right: 8,
+    top: 7,
+    width: 9,
+    height: 9,
+    borderRadius: 5,
+    backgroundColor: "#FF4D4D",
+    borderWidth: 1.5,
+    borderColor: "#FFFFFF",
   },
 });

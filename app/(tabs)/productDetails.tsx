@@ -13,7 +13,10 @@ import {
   View,
 } from "react-native";
 import { Appbar } from "react-native-paper";
+
+import { auth } from "../../api/firebase";
 import { useProductDetails } from "../../hooks/useProductDetails";
+import { notifyCartItemAdded } from "../../services/notifications/notification.service";
 
 const localImages: { [key: string]: any } = {
   a: require("../../assets/images/A1/a.webp"),
@@ -45,11 +48,11 @@ const getProductImage = (image?: string) => {
 };
 
 export default function ProductDetails() {
-  const { totalItems } = useCart();
+  const { totalItems, addToCart } = useCart();
   const router = useRouter();
   const params = useLocalSearchParams();
+
   const productId = (params.productId || params.id) as string;
-  const { addToCart } = useCart();
 
   const [fontsLoaded] = useFonts({ Rancho_400Regular });
 
@@ -57,6 +60,7 @@ export default function ProductDetails() {
 
   const handleAddToCart = () => {
     if (!product) return;
+
     addToCart({
       id: product.id,
       title: product.title,
@@ -64,20 +68,31 @@ export default function ProductDetails() {
       image: product.image,
       quantity: 1,
     });
+
+    const userId = auth.currentUser?.uid;
+
+    if (userId) {
+      void notifyCartItemAdded({
+        userId,
+        productId: product.id,
+        productTitle: product.title,
+      });
+    }
   };
 
   const goToReviews = () =>
     product &&
     router.push({
-      pathname: "/Reviews/Reviews",
+      pathname: "/reviews/Reviews",
       params: { productId: product.id },
-    });
+    } as Href);
+
   const goToAddReview = () =>
     product &&
     router.push({
-      pathname: "/Reviews/AddReview",
+      pathname: "/reviews/AddReview",
       params: { productId: product.id },
-    });
+    } as Href);
 
   if (!fontsLoaded || isLoading) {
     return (
@@ -91,6 +106,7 @@ export default function ProductDetails() {
         <Text style={{ fontSize: 18, marginBottom: 10 }}>
           Product not found!
         </Text>
+
         <TouchableOpacity onPress={() => router.back()}>
           <Text style={{ color: "#FF5E22", fontWeight: "bold" }}>Go Back</Text>
         </TouchableOpacity>
@@ -104,6 +120,7 @@ export default function ProductDetails() {
         <TouchableOpacity onPress={() => router.back()}>
           <Appbar.Action icon="arrow-left" color="#000" />
         </TouchableOpacity>
+
         <TouchableOpacity
           style={styles.cartButton}
           onPress={() => router.push("/(tabs)/cart" as Href)}
@@ -121,17 +138,19 @@ export default function ProductDetails() {
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.pageTitle}>Product Details</Text>
-        <Image
-          source={getProductImage(product.image)}
-          style={styles.mainImage}
-        />
+
+        <Image source={getProductImage(product.image)} style={styles.mainImage} />
+
         <Text style={styles.productName}>{product.title}</Text>
+
         <Text style={styles.price}>${product.price}</Text>
+
         <Text style={styles.rating}>
           {"⭐".repeat(Math.round(product.rating || 5))}
         </Text>
 
         <Text style={styles.descriptionTitle}>Description:</Text>
+
         <Text style={styles.description}>
           {product.desc || "No description available for this product."}
         </Text>
@@ -151,6 +170,7 @@ export default function ProductDetails() {
             >
               <Text style={styles.secondaryButtonText}>Reviews</Text>
             </TouchableOpacity>
+
             <TouchableOpacity
               style={styles.secondaryButton}
               onPress={goToAddReview}
@@ -169,14 +189,17 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#fff",
   },
+
   notFoundContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
   },
+
   scrollContent: {
     paddingBottom: 40,
   },
+
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -184,6 +207,7 @@ const styles = StyleSheet.create({
     marginTop: 40,
     paddingHorizontal: 10,
   },
+
   pageTitle: {
     fontSize: 34,
     textAlign: "center",
@@ -192,12 +216,14 @@ const styles = StyleSheet.create({
     fontFamily: "Rancho_400Regular",
     color: "#000",
   },
+
   mainImage: {
     width: "90%",
     height: 260,
     alignSelf: "center",
     borderRadius: 15,
   },
+
   productName: {
     fontSize: 24,
     fontWeight: "bold",
@@ -205,6 +231,7 @@ const styles = StyleSheet.create({
     marginLeft: 20,
     color: "#000",
   },
+
   price: {
     fontSize: 24,
     color: "#FF5E22",
@@ -212,18 +239,21 @@ const styles = StyleSheet.create({
     marginLeft: 20,
     fontWeight: "bold",
   },
+
   rating: {
     fontSize: 18,
     marginTop: 10,
     marginLeft: 20,
     color: "#FF5E22",
   },
+
   descriptionTitle: {
     fontSize: 24,
     marginTop: 25,
     marginLeft: 20,
     fontWeight: "bold",
   },
+
   description: {
     fontSize: 16,
     color: "#555",
@@ -231,10 +261,12 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     lineHeight: 24,
   },
+
   actionsSection: {
     marginTop: 35,
     paddingHorizontal: 20,
   },
+
   fullCartButton: {
     backgroundColor: "#FF5E22",
     paddingVertical: 14,
@@ -242,15 +274,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 15,
   },
+
   cartButtonText: {
     color: "#fff",
     fontSize: 18,
     fontWeight: "bold",
   },
+
   reviewsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
   },
+
   secondaryButton: {
     backgroundColor: "#fff",
     borderWidth: 2,
@@ -260,11 +295,13 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: "center",
   },
+
   secondaryButtonText: {
     color: "#FF5E22",
     fontSize: 16,
     fontWeight: "bold",
   },
+
   cartButton: {
     width: 38,
     height: 38,

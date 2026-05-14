@@ -1,10 +1,13 @@
-import { db } from '@/api/firebase/config';
+import BottomNavBar from '@/components/layout/BottomNavBar';
+import { Feather } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import { db } from '@/api/firebase';
+import { useAuth } from '@/hooks/useAuth';
 import {
   collection,
   doc,
   getDocs,
   onSnapshot,
-  orderBy,
   query,
   Timestamp,
   updateDoc,
@@ -50,6 +53,7 @@ interface NotificationDocument {
   isRead: boolean;
   relatedScreen: string;
   relatedId: string;
+  userId?: string | null;
   createdAt: Timestamp;
 }
 
@@ -79,34 +83,73 @@ const isNotificationType = (type: unknown): type is NotificationType => {
   return typeof type === 'string' && notificationTypes.includes(type as NotificationType);
 };
 
+const getCreatedAtMillis = (createdAt: unknown) => {
+  if (createdAt instanceof Timestamp) {
+    return createdAt.toMillis();
+  }
+
+  if (
+    createdAt &&
+    typeof createdAt === 'object' &&
+    'toMillis' in createdAt &&
+    typeof createdAt.toMillis === 'function'
+  ) {
+    return createdAt.toMillis();
+  }
+
+  return 0;
+};
+
 export default function NotificationsScreen() {
+  const { user, isLoading: authLoading } = useAuth();
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
+    if (authLoading) {
+      setLoading(true);
+      return;
+    }
+
+    if (!user) {
+      setNotifications([]);
+      setErrorMessage('Please sign in to see your notifications.');
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+
     const notificationsQuery = query(
       collection(db, 'notifications'),
-      orderBy('createdAt', 'desc')
+      where('userId', '==', user.uid)
     );
 
     const unsubscribe = onSnapshot(
       notificationsQuery,
       (snapshot) => {
-        const nextNotifications: NotificationItem[] = snapshot.docs.map((notificationDoc) => {
-          const data = notificationDoc.data() as Partial<NotificationDocument>;
+        const nextNotifications: NotificationItem[] = snapshot.docs
+          .sort((firstDoc, secondDoc) => {
+            const firstData = firstDoc.data() as Partial<NotificationDocument>;
+            const secondData = secondDoc.data() as Partial<NotificationDocument>;
 
-          return {
-            id: notificationDoc.id,
-            title: typeof data.title === 'string' ? data.title : '',
-            message: typeof data.message === 'string' ? data.message : '',
-            time: typeof data.time === 'string' ? data.time : '',
-            type: isNotificationType(data.type) ? data.type : 'system',
-            isRead: typeof data.isRead === 'boolean' ? data.isRead : false,
-            relatedScreen: typeof data.relatedScreen === 'string' ? data.relatedScreen : '',
-            relatedId: typeof data.relatedId === 'string' ? data.relatedId : '',
-          };
-        });
+            return getCreatedAtMillis(secondData.createdAt) - getCreatedAtMillis(firstData.createdAt);
+          })
+          .map((notificationDoc) => {
+            const data = notificationDoc.data() as Partial<NotificationDocument>;
+
+            return {
+              id: notificationDoc.id,
+              title: typeof data.title === 'string' ? data.title : '',
+              message: typeof data.message === 'string' ? data.message : '',
+              time: typeof data.time === 'string' ? data.time : '',
+              type: isNotificationType(data.type) ? data.type : 'system',
+              isRead: typeof data.isRead === 'boolean' ? data.isRead : false,
+              relatedScreen: typeof data.relatedScreen === 'string' ? data.relatedScreen : '',
+              relatedId: typeof data.relatedId === 'string' ? data.relatedId : '',
+            };
+          });
 
         setNotifications(nextNotifications);
         setErrorMessage('');
@@ -121,7 +164,7 @@ export default function NotificationsScreen() {
     );
 
     return unsubscribe;
-  }, []);
+  }, [authLoading, user]);
 
   const markNotificationAsRead = async (id: string) => {
     try {
@@ -134,20 +177,28 @@ export default function NotificationsScreen() {
   };
 
   const markAllAsRead = async () => {
+    if (!user) {
+      return;
+    }
+
     try {
       const unreadNotificationsQuery = query(
         collection(db, 'notifications'),
-        where('isRead', '==', false)
+        where('userId', '==', user.uid)
       );
-      const unreadNotificationsSnapshot = await getDocs(unreadNotificationsQuery);
+      const notificationsSnapshot = await getDocs(unreadNotificationsQuery);
+      const unreadNotifications = notificationsSnapshot.docs.filter((notificationDoc) => {
+        const data = notificationDoc.data() as Partial<NotificationDocument>;
+        return data.isRead === false;
+      });
 
-      if (unreadNotificationsSnapshot.empty) {
+      if (unreadNotifications.length === 0) {
         return;
       }
 
       const batch = writeBatch(db);
 
-      unreadNotificationsSnapshot.docs.forEach((notificationDoc) => {
+      unreadNotifications.forEach((notificationDoc) => {
         batch.update(notificationDoc.ref, {
           isRead: true,
         });
@@ -164,10 +215,31 @@ export default function NotificationsScreen() {
     // TODO: Navigate to notification.relatedScreen using notification.relatedId when routes are ready.
   };
 
+  const handleBackPress = () => {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+
+    router.replace('/(tabs)/home');
+  };
+
   const hasNotifications = notifications.length > 0;
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <View style={styles.pageHeader}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={handleBackPress}
+          activeOpacity={0.8}
+        >
+          <Feather name="arrow-left" size={22} color="#2F2A27" />
+        </TouchableOpacity>
+
+        <Text style={styles.pageHeaderTitle}>Notifications</Text>
+      </View>
+
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <View style={styles.headerText}>
@@ -225,6 +297,8 @@ export default function NotificationsScreen() {
           </View>
         )}
       </ScrollView>
+
+      <BottomNavBar />
     </SafeAreaView>
   );
 }
@@ -234,11 +308,42 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFF7F3',
   },
+  pageHeader: {
+    alignItems: 'center',
+    backgroundColor: '#FFF7F3',
+    flexDirection: 'row',
+    minHeight: 56,
+    paddingHorizontal: 16,
+  },
+  backButton: {
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    height: 40,
+    justifyContent: 'center',
+    shadowColor: '#6F3D2B',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    width: 40,
+    elevation: 2,
+  },
+  pageHeaderTitle: {
+    color: '#2F2A27',
+    flex: 1,
+    fontSize: 20,
+    fontWeight: '800',
+    marginRight: 40,
+    textAlign: 'center',
+  },
   container: {
     flexGrow: 1,
     paddingHorizontal: 20,
-    paddingTop: 24,
-    paddingBottom: 32,
+    paddingTop: 12,
+    paddingBottom: 96,
   },
   header: {
     gap: 18,

@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import React, { memo } from "react";
 import {
   View,
@@ -20,6 +21,8 @@ type Props = {
   desc: string;
   category?: string;
   rating?: number;
+  isFavorite?: boolean;
+  onToggleFavorite?: () => void;
   onAdd?: () => void;
   onPressCard?: () => void;
 };
@@ -32,6 +35,8 @@ const ProductCard = memo(function ProductCard({
   desc,
   category,
   rating,
+  isFavorite = false,
+  onToggleFavorite,
   onAdd,
   onPressCard,
 }: Props) {
@@ -45,6 +50,18 @@ const ProductCard = memo(function ProductCard({
           source={typeof image === "string" ? { uri: image } : image}
           style={styles.image}
           resizeMode="cover"
+        />
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.favoriteButton}
+        onPress={onToggleFavorite}
+        activeOpacity={0.8}
+      >
+        <Ionicons
+          name={isFavorite ? "heart" : "heart-outline"}
+          size={20}
+          color={isFavorite ? "#F47C48" : "#C9AFA0"}
         />
       </TouchableOpacity>
 
@@ -110,48 +127,78 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 3 },
   },
+
   image: {
     width: "100%",
     height: 110,
     borderRadius: 14,
     backgroundColor: "#eee",
   },
+
+  favoriteButton: {
+    position: "absolute",
+    top: 18,
+    right: 18,
+    zIndex: 10,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+  },
+
   content: {
     flex: 1,
     marginTop: 8,
   },
+
   title: {
     fontSize: 15,
     fontWeight: "bold",
     color: "#000",
   },
+
   categoryText: {
     fontSize: 11,
     color: "#FF5E22",
     marginTop: 2,
     fontWeight: "600",
   },
+
   desc: {
     fontSize: 12,
     color: "#777",
     marginTop: 5,
     lineHeight: 16,
   },
+
   rating: {
     fontSize: 12,
     color: "#FF5E22",
     marginTop: "auto",
     marginBottom: 6,
   },
+
   bottomRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
+
   priceBox: {
     maxWidth: "42%",
     flexShrink: 1,
   },
+
   oldPrice: {
     color: "#999",
     fontWeight: "600",
@@ -159,11 +206,13 @@ const styles = StyleSheet.create({
     textDecorationLine: "line-through",
     marginBottom: 1,
   },
+
   price: {
     color: "#FF5E22",
     fontWeight: "bold",
     fontSize: 15,
   },
+
   button: {
     backgroundColor: "#FF5E22",
     paddingHorizontal: 8,
@@ -171,6 +220,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     maxWidth: "58%",
   },
+
   buttonText: {
     color: "#fff",
     fontSize: 10,

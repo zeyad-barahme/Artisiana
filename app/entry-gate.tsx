@@ -1,27 +1,35 @@
-import {
-  View,
-  Text,
-  StyleSheet,
-  Image,
-  TouchableOpacity,
-  useWindowDimensions,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useAuth } from "@/hooks/useAuth";
+import { GiveYouGlory_400Regular } from "@expo-google-fonts/give-you-glory";
+import { Halant_400Regular } from "@expo-google-fonts/halant";
+import { useFonts } from "expo-font";
 import { useRouter, type Href } from "expo-router";
 import { useEffect } from "react";
-import { useAuth } from "@/hooks/useAuth";
+import {
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  useWindowDimensions,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function EntryGateScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { width, height } = useWindowDimensions();
 
+  const [fontsLoaded] = useFonts({
+    GiveYouGlory_400Regular,
+    Halant_400Regular,
+  });
+
   const isLargeScreen = width > 600;
 
   const contentWidth = isLargeScreen ? 420 : width * 0.85;
   const logoSize = isLargeScreen ? 260 : width * 0.4;
-  const titleSize = isLargeScreen ? 34 : width * 0.07;
-  const subtitleSize = isLargeScreen ? 14 : width * 0.03;
+  const titleSize = isLargeScreen ? 34 : width * 0.085;
+  const subtitleSize = isLargeScreen ? 26 : width * 0.06;
   const buttonTextSize = isLargeScreen ? 16 : width * 0.04;
   const buttonPadding = isLargeScreen ? 16 : height * 0.02;
 
@@ -31,25 +39,41 @@ export default function EntryGateScreen() {
     }
   }, [user, router]);
 
+  if (!fontsLoaded) {
+    return null;
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={[styles.content, { width: contentWidth }]}>
         <View style={styles.logoContainer}>
-          <Image
-            source={require("../assets/images/logo.png")}
-            style={{
-              width: logoSize,
-              height: logoSize,
-            }}
-            resizeMode="contain"
-          />
+          <View
+            style={[
+              styles.logoCircle,
+              {
+                width: logoSize,
+                height: logoSize,
+                borderRadius: logoSize / 2,
+              },
+            ]}
+          >
+            <Image
+              source={require("../assets/images/Logo.png")}
+              style={{
+                width: logoSize,
+                height: logoSize,
+                borderRadius: logoSize / 2,
+              }}
+              resizeMode="cover"
+            />
+          </View>
 
           <Text style={[styles.title, { fontSize: titleSize }]}>
-            Artestiana
+            Welcome To Artisiana .
           </Text>
 
           <Text style={[styles.subtitle, { fontSize: subtitleSize }]}>
-            HANDMADE CRAFTS
+            Discover Handmade Crafts
           </Text>
         </View>
 
@@ -99,16 +123,28 @@ const styles = StyleSheet.create({
     marginTop: 35,
   },
 
+  logoCircle: {
+    overflow: "hidden",
+    backgroundColor: "#F5E7DE",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 45,
+  },
+
   title: {
-    fontWeight: "bold",
-    color: "#4A3F35",
-    marginTop: 10,
+    fontFamily: "GiveYouGlory_400Regular",
+    color: "#F47C48",
+    textAlign: "center",
+    letterSpacing: 0.5,
+    lineHeight: 40,
   },
 
   subtitle: {
-    letterSpacing: 2,
+    fontFamily: "Halant_400Regular",
     color: "#8C7B6B",
-    marginTop: 5,
+    textAlign: "center",
+    marginTop: 6,
+    lineHeight: 34,
   },
 
   buttonsContainer: {
@@ -117,25 +153,25 @@ const styles = StyleSheet.create({
   },
 
   primaryBtn: {
-    backgroundColor: "#F47C4C",
+    backgroundColor: "#F47C48",
     borderRadius: 30,
     alignItems: "center",
     marginBottom: 15,
   },
 
   primaryText: {
-    color: "#fff",
-    fontWeight: "600",
+    color: "#FFFFFF",
+    fontWeight: "700",
   },
 
   secondaryBtn: {
-    backgroundColor: "#CBB8A5",
+    backgroundColor: "#F5E7DE",
     borderRadius: 30,
     alignItems: "center",
   },
 
   secondaryText: {
     color: "#4A3F35",
-    fontWeight: "500",
+    fontWeight: "600",
   },
 });

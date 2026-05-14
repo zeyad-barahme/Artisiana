@@ -16,6 +16,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
 import { auth } from "@/api/firebase";
+import { notifyAccountCreated } from "@/services/notifications/notification.service";
 import { createUserProfile } from "@/services/user-profile";
 
 type SignupForm = {
@@ -81,6 +82,8 @@ export default function Signup() {
       });
 
       Alert.alert("Success", "Account created successfully 🎉");
+
+      await notifyAccountCreated(cred.user.uid);
 
       reset();
       router.replace("/discover" as Href);

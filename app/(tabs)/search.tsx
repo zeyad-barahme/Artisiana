@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -17,6 +17,18 @@ import ProductCard1w from "../../components/ProductCard1w";
 import BottomNavBar from "../../components/layout/BottomNavBar";
 import { useCart } from "../../hooks/useCart";
 import { Product, useProducts } from "../../hooks/useHomeData";
+import { auth } from "../../api/firebase";
+import {
+  addFavorite,
+  getUserFavorites,
+  removeFavorite,
+} from "../../services/favorites/favorites.service";
+import { notifyCartItemAdded } from "../../services/notifications/notification.service";
+import {
+  getOfflineProducts,
+  initOfflineProductsDatabase,
+  saveOfflineProducts,
+} from "../../services/offline/offlineProducts.service";
 
 const BG = "#FFF7F3";
 const PRIMARY = "#F47C48";
@@ -64,6 +76,10 @@ export default function SearchScreen() {
   const searchInputRef = useRef<TextInput>(null);
 
   const [search, setSearch] = useState("");
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
+  const [offlineProducts, setOfflineProducts] = useState<Product[]>([]);
+  const [isOfflineMode, setIsOfflineMode] = useState(false);
+  const [isLoadingOffline, setIsLoadingOffline] = useState(true);
 
   const {
     data: products = [],
@@ -72,12 +88,76 @@ export default function SearchScreen() {
     refetch,
   } = useProducts();
 
+  useEffect(() => {
+    const loadFavorites = async () => {
+      const userId = auth.currentUser?.uid;
+
+      if (!userId) return;
+
+      try {
+        const ids = await getUserFavorites(userId);
+        setFavoriteIds(ids);
+      } catch (error) {
+        console.log("Error loading favorites:", error);
+      }
+    };
+
+    loadFavorites();
+  }, []);
+
+  useEffect(() => {
+    const setupOfflineDatabase = async () => {
+      try {
+        await initOfflineProductsDatabase();
+
+        const cachedProducts = await getOfflineProducts();
+        setOfflineProducts(cachedProducts);
+      } catch (error) {
+        console.log("SQLite init error:", error);
+      } finally {
+        setIsLoadingOffline(false);
+      }
+    };
+
+    setupOfflineDatabase();
+  }, []);
+
+  useEffect(() => {
+    const cacheOnlineProducts = async () => {
+      if (products.length === 0) return;
+
+      try {
+        await saveOfflineProducts(products);
+        setOfflineProducts(products);
+        setIsOfflineMode(false);
+      } catch (error) {
+        console.log("SQLite save error:", error);
+      }
+    };
+
+    cacheOnlineProducts();
+  }, [products]);
+
+  useEffect(() => {
+    if (isError && offlineProducts.length > 0) {
+      setIsOfflineMode(true);
+    }
+  }, [isError, offlineProducts.length]);
+
+  const displayedProducts = useMemo(() => {
+    if (isError && offlineProducts.length > 0) {
+      return offlineProducts;
+    }
+
+    return products;
+  }, [isError, offlineProducts, products]);
+
   const filteredProducts = useMemo(() => {
     const text = search.trim().toLowerCase();
 
-    if (!text) return products;
+    if (!text) return displayedProducts;
 
-    return products.filter((item) => {
+    return displayedProducts.filter((item) => {
       const title = item.title?.toLowerCase() || "";
       const category = item.category?.toLowerCase() || "";
       const desc = item.desc?.toLowerCase() || "";
@@ -88,7 +168,7 @@ export default function SearchScreen() {
         desc.includes(text)
       );
     });
-  }, [search, products]);
+  }, [search, displayedProducts]);
 
   const goToProductDetails = useCallback((productId: string) => {
     router.push({
@@ -96,6 +176,36 @@ export default function SearchScreen() {
       params: { productId },
     } as Href);
   }, []);
+
+  const handleToggleFavorite = useCallback(
+    async (item: Product) => {
+      const userId = auth.currentUser?.uid;
+
+      if (!userId) {
+        Alert.alert("Login Required", "Please login to save favorites.");
+        return;
+      }
+
+      const isAlreadyFavorite = favoriteIds.includes(item.id);
+
+      try {
+        if (isAlreadyFavorite) {
+          await removeFavorite(userId, item.id);
+
+          setFavoriteIds((prev) =>
+            prev.filter((productId) => productId !== item.id)
+          );
+        } else {
+          await addFavorite(userId, item);
+
+          setFavoriteIds((prev) => [...prev, item.id]);
+        }
+      } catch (error) {
+        Alert.alert("Error", "Something went wrong. Please try again.");
+      }
+    },
+    [favoriteIds]
+  );
 
   const handleAddToCart = useCallback(
     (item: Product) => {
@@ -107,7 +217,15 @@ export default function SearchScreen() {
         quantity: 1,
       });
 
-      Alert.alert("Added", "Product added to cart successfully.");
+      const userId = auth.currentUser?.uid;
+
+      if (userId) {
+        void notifyCartItemAdded({
+          userId,
+          productId: item.id,
+          productTitle: item.title,
+        });
+      }
     },
     [addToCart]
   );
@@ -118,8 +236,14 @@ export default function SearchScreen() {
   }, []);
 
   const handleRetry = useCallback(() => {
+    setIsOfflineMode(false);
     refetch();
   }, [refetch]);
+
+  const shouldShowLoader = (isLoading || isLoadingOffline) && !isOfflineMode;
+
+  const shouldShowError =
+    isError && offlineProducts.length === 0 && !isLoadingOffline;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -149,17 +273,25 @@ export default function SearchScreen() {
           )}
         </View>
 
-        {isLoading ? (
+        {isOfflineMode ? (
+          <View style={styles.offlineBanner}>
+            <Text style={styles.offlineText}>
+              Offline mode: showing saved products.
+            </Text>
+          </View>
+        ) : null}
+
+        {shouldShowLoader ? (
           <ActivityIndicator
             size="small"
             color={PRIMARY}
             style={styles.loader}
           />
-        ) : isError ? (
+        ) : shouldShowError ? (
           <View style={styles.errorCard}>
             <Text style={styles.errorTitle}>Something went wrong</Text>
             <Text style={styles.errorText}>
-              We could not load products. Please try again.
+              We could not load products and no offline data is available.
             </Text>
 
             <TouchableOpacity style={styles.retryButton} onPress={handleRetry}>
@@ -183,6 +315,8 @@ export default function SearchScreen() {
                   rating={item.rating}
                   image={getProductImage(item.image)}
                   desc={item.desc || ""}
+                  isFavorite={favoriteIds.includes(item.id)}
+                  onToggleFavorite={() => handleToggleFavorite(item)}
                   onAdd={() => handleAddToCart(item)}
                   onPressCard={() => goToProductDetails(item.id)}
                 />
@@ -223,7 +357,7 @@ const styles = StyleSheet.create({
 
   searchWrapper: {
     position: "relative",
-    marginBottom: 18,
+    marginBottom: 12,
   },
 
   input: {
@@ -255,6 +389,23 @@ const styles = StyleSheet.create({
     color: PRIMARY,
     lineHeight: 24,
     fontWeight: "600",
+  },
+
+  offlineBanner: {
+    backgroundColor: "#FFF1E8",
+    borderColor: "#F4B8A0",
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingVertical: 9,
+    paddingHorizontal: 12,
+    marginBottom: 14,
+  },
+
+  offlineText: {
+    color: "#9A5A3F",
+    fontSize: 13,
+    fontWeight: "700",
+    textAlign: "center",
   },
 
   columnWrapper: {

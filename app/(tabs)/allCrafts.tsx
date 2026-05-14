@@ -9,11 +9,14 @@ import {
   Text,
   View,
 } from "react-native";
+
+import { auth } from "../../api/firebase";
 import AppBar from "../../components/layout/AppBar";
 import BottomNavBar from "../../components/layout/BottomNavBar";
 import ProductCard from "../../components/ProductCard1w";
 import { useCart } from "../../hooks/useCart";
 import { useProducts } from "../../hooks/useProducts";
+import { notifyCartItemAdded } from "../../services/notifications/notification.service";
 
 const localImages: { [key: string]: any } = {
   a: require("../../assets/images/A1/a.webp"),
@@ -41,8 +44,18 @@ export default function AllCrafts() {
         image: item.image,
         quantity: 1,
       });
+
+      const userId = auth.currentUser?.uid;
+
+      if (userId) {
+        void notifyCartItemAdded({
+          userId,
+          productId: item.id,
+          productTitle: item.title,
+        });
+      }
     },
-    [addToCart],
+    [addToCart]
   );
 
   const handlePressCard = useCallback(
@@ -52,7 +65,7 @@ export default function AllCrafts() {
         params: { productId },
       });
     },
-    [router],
+    [router]
   );
 
   if (!fontsLoaded || isLoading) {
@@ -63,7 +76,7 @@ export default function AllCrafts() {
 
   if (isError) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+      <View style={styles.errorContainer}>
         <Text>Error loading products.</Text>
       </View>
     );
@@ -76,11 +89,14 @@ export default function AllCrafts() {
         contentContainerStyle={{ paddingBottom: 100 }}
       >
         <AppBar />
+
         <Image
           source={require("../../assets/images/A1/08bfaa47c6dec68aae046dcf5e766154b122ef7e.png")}
           style={styles.image}
         />
+
         <Text style={styles.title}>All Crafts</Text>
+
         <View style={styles.productsContainer}>
           {products?.map((item) => (
             <ProductCard
@@ -96,6 +112,7 @@ export default function AllCrafts() {
           ))}
         </View>
       </ScrollView>
+
       <BottomNavBar />
     </View>
   );
@@ -106,20 +123,29 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f5f5f5",
   },
+
   image: {
     width: "100%",
     height: 280,
   },
+
   title: {
     fontSize: 30,
     textAlign: "center",
     marginVertical: 20,
     fontFamily: "Rancho_400Regular",
   },
+
   productsContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
     paddingHorizontal: 10,
+  },
+
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });
