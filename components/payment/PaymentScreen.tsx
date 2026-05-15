@@ -39,11 +39,7 @@ function PaymentContent({
   const { total, cartItems, clearCart } = useCart();
   const router = useRouter();
 
-  const {
-    control,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<PaymentFormValues>({
+  const { control, handleSubmit } = useForm<PaymentFormValues>({
     mode: "onChange",
     defaultValues: {
       cardNumber: "",
@@ -127,7 +123,7 @@ function PaymentContent({
       if (errorMessage === "Missing checkout details") {
         Alert.alert(
           "Missing Checkout Details",
-          "Please go back and fill in all checkout details."
+          "Please go back and fill in all checkout details.",
         );
         return;
       }
@@ -141,7 +137,7 @@ function PaymentContent({
 
       Alert.alert(
         "Order Error",
-        "Could not save your order. Please try again."
+        "Could not save your order. Please try again.",
       );
     },
   });
@@ -174,12 +170,12 @@ function PaymentContent({
 
           <PaymentForm
             control={control}
-            errors={errors}
             formatExpireDate={formatExpireDate}
             cardNumberRef={cardNumberRef}
             cardholderNameRef={cardholderNameRef}
             expireDateRef={expireDateRef}
             cvcRef={cvcRef}
+            onSubmitPayment={handleSubmit(handlePay)}
           />
 
           <View style={styles.buttonContainer}>

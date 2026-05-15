@@ -4,13 +4,14 @@ import {
   saveCheckoutDraft,
 } from "@/services/checkout/checkoutDraft.service";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   StyleSheet,
+  TextInput,
   View,
 } from "react-native";
 import CheckoutButton from "../shared/CheckoutButton";
@@ -53,6 +54,11 @@ export default function CheckoutDetails() {
   });
 
   const watchedValues = watch();
+
+  const fullNameRef = useRef<TextInput>(null);
+  const phoneNumberRef = useRef<TextInput>(null);
+  const addressRef = useRef<TextInput>(null);
+  const cityRef = useRef<TextInput>(null);
 
   useEffect(() => {
     const prepareCheckoutDetails = async () => {
@@ -136,11 +142,15 @@ export default function CheckoutDetails() {
             }}
             render={({ field: { value, onChange } }) => (
               <CheckoutInput
+                ref={fullNameRef}
                 label="Full Name"
                 placeholder="Enter full name"
                 value={value}
                 onChangeText={onChange}
                 errorMessage={errors.fullName?.message}
+                returnKeyType="next"
+                onSubmitEditing={() => phoneNumberRef.current?.focus()}
+                blurOnSubmit={false}
               />
             )}
           />
@@ -153,12 +163,16 @@ export default function CheckoutDetails() {
             }}
             render={({ field: { value, onChange } }) => (
               <CheckoutInput
+                ref={phoneNumberRef}
                 label="Phone Number"
                 placeholder="Enter phone number"
                 value={value}
                 onChangeText={onChange}
                 keyboardType="phone-pad"
                 errorMessage={errors.phoneNumber?.message}
+                returnKeyType="next"
+                onSubmitEditing={() => addressRef.current?.focus()}
+                blurOnSubmit={false}
               />
             )}
           />
@@ -171,11 +185,15 @@ export default function CheckoutDetails() {
             }}
             render={({ field: { value, onChange } }) => (
               <CheckoutInput
+                ref={addressRef}
                 label="Address"
                 placeholder="Enter address"
                 value={value}
                 onChangeText={onChange}
                 errorMessage={errors.address?.message}
+                returnKeyType="next"
+                onSubmitEditing={() => cityRef.current?.focus()}
+                blurOnSubmit={false}
               />
             )}
           />
@@ -188,11 +206,14 @@ export default function CheckoutDetails() {
             }}
             render={({ field: { value, onChange } }) => (
               <CheckoutInput
+                ref={cityRef}
                 label="City"
                 placeholder="Enter city"
                 value={value}
                 onChangeText={onChange}
                 errorMessage={errors.city?.message}
+                returnKeyType="done"
+                onSubmitEditing={handleSubmit(onSubmit)}
               />
             )}
           />

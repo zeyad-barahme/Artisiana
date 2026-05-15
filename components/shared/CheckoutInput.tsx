@@ -1,5 +1,11 @@
 import { forwardRef } from "react";
-import { StyleSheet, Text, TextInput, View } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+  type ReturnKeyTypeOptions,
+} from "react-native";
 
 type CheckoutInputProps = {
   label: string;
@@ -8,6 +14,9 @@ type CheckoutInputProps = {
   onChangeText: (text: string) => void;
   keyboardType?: "default" | "phone-pad" | "numeric" | "email-address";
   errorMessage?: string;
+  returnKeyType?: ReturnKeyTypeOptions;
+  onSubmitEditing?: () => void;
+  blurOnSubmit?: boolean;
 };
 
 const CheckoutInput = forwardRef<TextInput, CheckoutInputProps>(
@@ -19,6 +28,9 @@ const CheckoutInput = forwardRef<TextInput, CheckoutInputProps>(
       onChangeText,
       keyboardType = "default",
       errorMessage,
+      returnKeyType,
+      onSubmitEditing,
+      blurOnSubmit,
     },
     ref,
   ) => {
@@ -34,6 +46,9 @@ const CheckoutInput = forwardRef<TextInput, CheckoutInputProps>(
           value={value}
           onChangeText={onChangeText}
           keyboardType={keyboardType}
+          returnKeyType={returnKeyType}
+          onSubmitEditing={onSubmitEditing}
+          blurOnSubmit={blurOnSubmit}
         />
 
         {errorMessage ? (

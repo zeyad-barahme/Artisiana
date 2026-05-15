@@ -17,7 +17,9 @@ export default function CartScreen() {
 
   return (
     <View style={styles.container}>
-      <AppBar />
+      <View style={styles.appBarWrapper}>
+        <AppBar />
+      </View>
 
       <View style={styles.content}>
         <Text style={styles.title}>Your Cart</Text>
@@ -47,6 +49,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#FFF7F3",
+  },
+
+  appBarWrapper: {
+    backgroundColor: "#FFFFFF",
+    borderBottomWidth: 1,
+    borderBottomColor: "#EFEFEF",
   },
 
   content: {
