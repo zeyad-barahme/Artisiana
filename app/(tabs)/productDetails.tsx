@@ -83,14 +83,14 @@ export default function ProductDetails() {
   const goToReviews = () =>
     product &&
     router.push({
-      pathname: "/reviews/Reviews",
+      pathname: "/Reviews/Reviews",
       params: { productId: product.id },
     } as Href);
 
   const goToAddReview = () =>
     product &&
     router.push({
-      pathname: "/reviews/AddReview",
+      pathname: "/Reviews/AddReview",
       params: { productId: product.id },
     } as Href);
 

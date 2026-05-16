@@ -1,5 +1,5 @@
 import type { RefObject } from "react";
-import type { Control, FieldErrors } from "react-hook-form";
+import type { Control } from "react-hook-form";
 import { Controller } from "react-hook-form";
 import { StyleSheet, TextInput, View } from "react-native";
 
@@ -22,12 +22,12 @@ export type PaymentFormValues = {
 
 type PaymentFormProps = {
   control: Control<PaymentFormValues>;
-  errors: FieldErrors<PaymentFormValues>;
   formatExpireDate: (text: string) => string;
   cardNumberRef: RefObject<TextInput | null>;
   cardholderNameRef: RefObject<TextInput | null>;
   expireDateRef: RefObject<TextInput | null>;
   cvcRef: RefObject<TextInput | null>;
+  onSubmitPayment: () => void;
 };
 
 export default function PaymentForm({
@@ -37,6 +37,7 @@ export default function PaymentForm({
   cardholderNameRef,
   expireDateRef,
   cvcRef,
+  onSubmitPayment,
 }: PaymentFormProps) {
   return (
     <View style={styles.container}>
@@ -57,6 +58,9 @@ export default function PaymentForm({
             }}
             keyboardType="numeric"
             errorMessage={error?.message}
+            returnKeyType="next"
+            onSubmitEditing={() => cardholderNameRef.current?.focus()}
+            blurOnSubmit={false}
           />
         )}
       />
@@ -75,6 +79,9 @@ export default function PaymentForm({
             value={value}
             onChangeText={onChange}
             errorMessage={error?.message}
+            returnKeyType="next"
+            onSubmitEditing={() => expireDateRef.current?.focus()}
+            blurOnSubmit={false}
           />
         )}
       />
@@ -98,6 +105,9 @@ export default function PaymentForm({
                 }}
                 keyboardType="numeric"
                 errorMessage={error?.message}
+                returnKeyType="next"
+                onSubmitEditing={() => cvcRef.current?.focus()}
+                blurOnSubmit={false}
               />
             )}
           />
@@ -121,6 +131,8 @@ export default function PaymentForm({
                 }}
                 keyboardType="numeric"
                 errorMessage={error?.message}
+                returnKeyType="done"
+                onSubmitEditing={onSubmitPayment}
               />
             )}
           />

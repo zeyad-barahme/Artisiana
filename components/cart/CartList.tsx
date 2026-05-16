@@ -1,4 +1,3 @@
-import React from "react";
 import { FlatList, StyleSheet } from "react-native";
 import CartItem from "./CartItem";
 
@@ -12,6 +11,7 @@ export default function CartList({
     <FlatList
       data={items}
       keyExtractor={(item) => item.id}
+      showsVerticalScrollIndicator={false}
       contentContainerStyle={styles.container}
       renderItem={({ item }) => (
         <CartItem
@@ -32,6 +32,6 @@ const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 27,
     marginTop: 50,
-    paddingBottom: 120,
+    paddingBottom: 175,
   },
 });
