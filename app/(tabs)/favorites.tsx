@@ -14,12 +14,10 @@ import type { Href } from "expo-router";
 import { auth } from "../../api/firebase";
 import BottomNavBar from "../../components/layout/BottomNavBar";
 import ProductCard1w from "../../components/ProductCard1w";
+import { useFavorites } from "../../context/FavoritesContext";
 import { useCart } from "../../hooks/useCart";
 import { Product } from "../../hooks/useHomeData";
-import {
-  getUserFavoriteProducts,
-  removeFavorite,
-} from "../../services/favorites/favorites.service";
+import { getUserFavoriteProducts } from "../../services/favorites/favorites.service";
 import { notifyCartItemAdded } from "../../services/notifications/notification.service";
 
 const BG = "#FFF7F3";
@@ -64,6 +62,7 @@ const getProductImage = (image?: string) => {
 
 export default function FavoritesScreen() {
   const { addToCart } = useCart();
+  const { refreshFavorites, toggleFavorite } = useFavorites();
 
   const [favorites, setFavorites] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -82,12 +81,14 @@ export default function FavoritesScreen() {
 
       const items = await getUserFavoriteProducts(userId);
       setFavorites(items);
+
+      await refreshFavorites();
     } catch (error) {
       Alert.alert("Error", "Could not load favorites.");
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [refreshFavorites]);
 
   useFocusEffect(
     useCallback(() => {
@@ -102,21 +103,20 @@ export default function FavoritesScreen() {
     } as Href);
   }, []);
 
-  const handleRemoveFavorite = useCallback(async (item: Product) => {
-    const userId = auth.currentUser?.uid;
+  const handleRemoveFavorite = useCallback(
+    async (item: Product) => {
+      try {
+        await toggleFavorite(item);
 
-    if (!userId) return;
-
-    try {
-      await removeFavorite(userId, item.id);
-
-      setFavorites((prev) =>
-        prev.filter((product) => product.id !== item.id)
-      );
-    } catch (error) {
-      Alert.alert("Error", "Could not remove favorite.");
-    }
-  }, []);
+        setFavorites((prev) =>
+          prev.filter((product) => product.id !== item.id)
+        );
+      } catch (error) {
+        Alert.alert("Error", "Could not remove favorite.");
+      }
+    },
+    [toggleFavorite]
+  );
 
   const handleAddToCart = useCallback(
     (item: Product) => {
