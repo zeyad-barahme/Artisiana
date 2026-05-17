@@ -2,7 +2,9 @@ import { useCart } from "@/hooks/useCart";
 import { Feather } from "@expo/vector-icons";
 import type { Href } from "expo-router";
 import { router } from "expo-router";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import {
+  Animated,
   Image,
   StyleSheet,
   Text,
@@ -12,26 +14,67 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-export default function AppBar() {
+type AppBarProps = {
+  isVisible?: boolean;
+  floating?: boolean;
+};
+
+export default function AppBar({
+  isVisible = true,
+  floating = false,
+}: AppBarProps) {
   const { totalItems } = useCart();
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
 
+  const translateY = useRef(new Animated.Value(0)).current;
+
+  const appBarDynamicStyle = useMemo(
+    () => ({
+      width,
+      height: 78 + insets.top,
+      paddingTop: insets.top + 8,
+      transform: [{ translateY }],
+    }),
+    [width, insets.top, translateY]
+  );
+
+  const hiddenTranslateY = useMemo(() => {
+    return -(90 + insets.top);
+  }, [insets.top]);
+
+  useEffect(() => {
+    Animated.timing(translateY, {
+      toValue: isVisible ? 0 : hiddenTranslateY,
+      duration: 220,
+      useNativeDriver: true,
+    }).start();
+  }, [isVisible, hiddenTranslateY, translateY]);
+
+  const handleLogoPress = useCallback(() => {
+    router.push("/(tabs)/home" as Href);
+  }, []);
+
+  const handleSearchPress = useCallback(() => {
+    router.push("/(tabs)/search" as Href);
+  }, []);
+
+  const handleCartPress = useCallback(() => {
+    router.push("/(tabs)/cart" as Href);
+  }, []);
+
   return (
-    <View
+    <Animated.View
       style={[
         styles.wrapper,
-        {
-          width,
-          height: 78 + insets.top,
-          paddingTop: insets.top + 8,
-        },
+        floating && styles.floatingWrapper,
+        appBarDynamicStyle,
       ]}
     >
       <TouchableOpacity
         style={styles.logoSection}
         activeOpacity={0.85}
-        onPress={() => router.push("/(tabs)/home" as Href)}
+        onPress={handleLogoPress}
       >
         <View style={styles.logoCircle}>
           <Image
@@ -52,7 +95,7 @@ export default function AppBar() {
         <TouchableOpacity
           style={styles.searchBox}
           activeOpacity={0.85}
-          onPress={() => router.push("/(tabs)/search" as Href)}
+          onPress={handleSearchPress}
         >
           <Feather name="search" size={15} color="#FF7F50" />
 
@@ -63,7 +106,7 @@ export default function AppBar() {
 
         <TouchableOpacity
           style={styles.cartButton}
-          onPress={() => router.push("/(tabs)/cart" as Href)}
+          onPress={handleCartPress}
           activeOpacity={0.8}
         >
           <Feather name="shopping-cart" size={27} color="#FF7F50" />
@@ -75,7 +118,7 @@ export default function AppBar() {
           )}
         </TouchableOpacity>
       </View>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -95,6 +138,14 @@ const styles = StyleSheet.create({
       height: 4,
     },
     elevation: 4,
+  },
+
+  floatingWrapper: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 50,
   },
 
   logoSection: {

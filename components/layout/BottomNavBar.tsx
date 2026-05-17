@@ -4,7 +4,7 @@ import { Feather } from "@expo/vector-icons";
 import type { Href } from "expo-router";
 import { router, usePathname } from "expo-router";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Image, StyleSheet, TouchableOpacity, View } from "react-native";
 
 export default function BottomNavBar() {
@@ -12,11 +12,35 @@ export default function BottomNavBar() {
   const { user, isLoading } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
 
-  const isHome = pathname === "/(tabs)/home";
-  const isFavorites = pathname === "/(tabs)/favorites";
-  const isNotifications = pathname === "/(tabs)/notifications";
-  const isProfile = pathname === "/profile";
-  const hasUnreadNotifications = unreadCount > 0;
+  const activeRoutes = useMemo(
+    () => ({
+      isHome: pathname === "/(tabs)/home",
+      isFavorites: pathname === "/(tabs)/favorites",
+      isNotifications: pathname === "/(tabs)/notifications",
+      isProfile: pathname === "/profile",
+    }),
+    [pathname]
+  );
+
+  const hasUnreadNotifications = useMemo(() => {
+    return unreadCount > 0;
+  }, [unreadCount]);
+
+  const goToHome = useCallback(() => {
+    router.push("/(tabs)/home" as Href);
+  }, []);
+
+  const goToFavorites = useCallback(() => {
+    router.push("/(tabs)/favorites" as Href);
+  }, []);
+
+  const goToNotifications = useCallback(() => {
+    router.push("/(tabs)/notifications" as Href);
+  }, []);
+
+  const goToProfile = useCallback(() => {
+    router.push("/profile" as Href);
+  }, []);
 
   useEffect(() => {
     if (isLoading) {
@@ -52,21 +76,25 @@ export default function BottomNavBar() {
     <View style={styles.wrapper}>
       <TouchableOpacity
         style={styles.iconButton}
-        onPress={() => router.push("/(tabs)/home" as Href)}
+        onPress={goToHome}
         activeOpacity={0.8}
       >
-        <Feather name="home" size={22} color={isHome ? "#F47C48" : "#C9AFA0"} />
+        <Feather
+          name="home"
+          size={22}
+          color={activeRoutes.isHome ? "#F47C48" : "#C9AFA0"}
+        />
       </TouchableOpacity>
 
       <TouchableOpacity
         style={styles.iconButton}
-        onPress={() => router.push("/(tabs)/favorites" as Href)}
+        onPress={goToFavorites}
         activeOpacity={0.8}
       >
         <Feather
           name="heart"
           size={22}
-          color={isFavorites ? "#F47C48" : "#C9AFA0"}
+          color={activeRoutes.isFavorites ? "#F47C48" : "#C9AFA0"}
         />
       </TouchableOpacity>
 
@@ -81,25 +109,26 @@ export default function BottomNavBar() {
       <TouchableOpacity
         style={styles.iconButton}
         activeOpacity={0.8}
-        onPress={() => router.push("/(tabs)/notifications" as Href)}
+        onPress={goToNotifications}
       >
         <Feather
           name="bell"
           size={21}
-          color={isNotifications ? "#F47C48" : "#C9AFA0"}
+          color={activeRoutes.isNotifications ? "#F47C48" : "#C9AFA0"}
         />
+
         {hasUnreadNotifications ? <View style={styles.notificationDot} /> : null}
       </TouchableOpacity>
 
       <TouchableOpacity
         style={styles.iconButton}
         activeOpacity={0.8}
-        onPress={() => router.push("/profile" as Href)}
+        onPress={goToProfile}
       >
         <Feather
           name="user"
           size={21}
-          color={isProfile ? "#F47C48" : "#C9AFA0"}
+          color={activeRoutes.isProfile ? "#F47C48" : "#C9AFA0"}
         />
       </TouchableOpacity>
     </View>

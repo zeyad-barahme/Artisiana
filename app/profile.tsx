@@ -1,5 +1,4 @@
 import * as ImagePicker from "expo-image-picker";
-import { Feather } from "@expo/vector-icons";
 import { useFocusEffect, useRouter, type Href } from "expo-router";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -7,7 +6,6 @@ import {
   ActivityIndicator,
   Alert,
   Image,
-  Modal,
   ScrollView,
   StyleSheet,
   Text,
@@ -18,6 +16,11 @@ import {
 import { auth } from "@/api/firebase";
 import AppBar from "@/components/layout/AppBar";
 import BottomNavBar from "@/components/layout/BottomNavBar";
+import OrderCard from "@/components/profile/OrderCard";
+import ProfileHeader from "@/components/profile/ProfileHeader";
+import ProfileImagePreviewModal from "@/components/profile/ProfileImagePreviewModal";
+import ProfileSection from "@/components/profile/ProfileSection";
+import { useAutoHideAppBar } from "@/hooks/useAutoHideAppBar";
 import {
   getLocalAvatarUri,
   setLocalAvatarUri,
@@ -73,6 +76,7 @@ const getOrderImageSource = (image?: string) => {
 
 export default function Profile() {
   const router = useRouter();
+  const { isAppBarVisible, showAppBarWhileScrolling } = useAutoHideAppBar();
 
   const [user, setUser] = useState<UserProfile | null>(null);
   const [image, setImage] = useState<string | null>(null);
@@ -330,96 +334,6 @@ export default function Profile() {
     ]);
   }, [router]);
 
-  const renderOrderCard = useCallback(
-    (order: CheckoutOrder, index: number) => {
-      const items = order.items || [];
-      const itemsCount = items.length;
-      const isReceived = order.status === "received";
-      const isExpanded = !!expandedOrderIds[order.id];
-
-      return (
-        <View key={order.id} style={styles.orderCard}>
-          <TouchableOpacity
-            style={styles.orderSummary}
-            onPress={() => toggleOrderExpanded(order.id)}
-            activeOpacity={0.82}
-          >
-            <View style={styles.orderSummaryLeft}>
-              <Text style={styles.orderNumber}>Order #{index + 1}</Text>
-
-              <Text style={styles.orderDetails}>
-                Items: {itemsCount} • Total: $
-                {Number(order.total || 0).toFixed(2)}
-              </Text>
-            </View>
-
-            <View style={styles.orderSummaryRight}>
-              <Text
-                style={[
-                  styles.orderStatus,
-                  isReceived && styles.receivedStatusText,
-                ]}
-              >
-                {order.status || "submitted"}
-              </Text>
-
-              <Feather
-                name={isExpanded ? "chevron-up" : "chevron-down"}
-                size={22}
-                color="#777"
-              />
-            </View>
-          </TouchableOpacity>
-
-          {isExpanded ? (
-            <View style={styles.orderExpandedContent}>
-              {!isReceived ? (
-                <TouchableOpacity
-                  style={styles.receivedButton}
-                  onPress={() => handleMarkOrderAsReceived(order)}
-                  activeOpacity={0.85}
-                >
-                  <Text style={styles.receivedButtonText}>
-                    Mark as received
-                  </Text>
-                </TouchableOpacity>
-              ) : (
-                <View style={styles.receivedBadge}>
-                  <Text style={styles.receivedBadgeText}>Received</Text>
-                </View>
-              )}
-
-              {items.map((item) => (
-                <View key={item.id} style={styles.orderItemRow}>
-                  <View style={styles.orderItemImageBox}>
-                    <Image
-                      source={getOrderImageSource(item.image)}
-                      style={styles.orderItemImage}
-                      resizeMode="cover"
-                    />
-
-                    <View style={styles.quantityBadge}>
-                      <Text style={styles.quantityText}>{item.quantity}x</Text>
-                    </View>
-                  </View>
-
-                  <View style={styles.orderItemInfo}>
-                    <Text style={styles.orderItemTitle}>{item.title}</Text>
-
-                    <Text style={styles.orderItemPrice}>
-                      ${Number(item.price || 0).toFixed(2)}
-                    </Text>
-                  </View>
-                </View>
-              ))}
-            </View>
-          ) : null}
-        </View>
-      );
-    },
-    [expandedOrderIds, handleMarkOrderAsReceived, toggleOrderExpanded]
-  );
-
   if (loading) {
     return (
       <View style={styles.center}>
@@ -447,66 +361,67 @@ export default function Profile() {
   return (
     <View style={styles.container}>
       <View style={styles.page}>
+        <AppBar isVisible={isAppBarVisible} floating />
+
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
+          onScroll={showAppBarWhileScrolling}
+          onScrollBeginDrag={showAppBarWhileScrolling}
+          onScrollEndDrag={showAppBarWhileScrolling}
+          onMomentumScrollEnd={showAppBarWhileScrolling}
+          scrollEventThrottle={16}
         >
-          <AppBar />
+          <ProfileHeader
+            name={user.name}
+            email={user.email}
+            image={image}
+            userInitial={userInitial}
+            onPressAvatar={onPressAvatar}
+            onEditProfile={handleEditProfile}
+          />
 
-          <View style={styles.profileBox}>
-            <TouchableOpacity onPress={onPressAvatar} activeOpacity={0.8}>
-              {image ? (
-                <Image source={{ uri: image }} style={styles.avatarImg} />
-              ) : (
-                <View style={styles.avatar}>
-                  <Text style={styles.avatarText}>{userInitial}</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-
-            <View style={styles.profileInfo}>
-              <Text style={styles.switchText}>Switchs Profile</Text>
-
-              <Text style={styles.name}>{user.name || "User"}</Text>
-              <Text style={styles.email}>{user.email}</Text>
-
-              <TouchableOpacity
-                style={styles.editBtn}
-                onPress={handleEditProfile}
-              >
-                <Text style={styles.editText}>Edit Profile</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Active Orders</Text>
-
+          <ProfileSection title="Active Orders">
             {ordersLoading ? (
               <Text style={styles.sectionText}>Loading orders...</Text>
             ) : activeOrders.length === 0 ? (
               <Text style={styles.sectionText}>No active orders.</Text>
             ) : (
-              activeOrders.map((order, index) => renderOrderCard(order, index))
+              activeOrders.map((order, index) => (
+                <OrderCard
+                  key={order.id}
+                  order={order}
+                  index={index}
+                  expanded={!!expandedOrderIds[order.id]}
+                  onToggle={() => toggleOrderExpanded(order.id)}
+                  onReceived={() => handleMarkOrderAsReceived(order)}
+                  getImage={getOrderImageSource}
+                />
+              ))
             )}
-          </View>
+          </ProfileSection>
 
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Received Orders</Text>
-
+          <ProfileSection title="Received Orders">
             {ordersLoading ? (
               <Text style={styles.sectionText}>Loading orders...</Text>
             ) : receivedOrders.length === 0 ? (
               <Text style={styles.sectionText}>No received orders yet.</Text>
             ) : (
-              receivedOrders.map((order, index) =>
-                renderOrderCard(order, index)
-              )
+              receivedOrders.map((order, index) => (
+                <OrderCard
+                  key={order.id}
+                  order={order}
+                  index={index}
+                  expanded={!!expandedOrderIds[order.id]}
+                  onToggle={() => toggleOrderExpanded(order.id)}
+                  onReceived={() => handleMarkOrderAsReceived(order)}
+                  getImage={getOrderImageSource}
+                />
+              ))
             )}
-          </View>
+          </ProfileSection>
 
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Subscription</Text>
+          <ProfileSection title="Subscription">
             <Text style={styles.sectionText}>Plan : {subscriptionPlan}</Text>
 
             <TouchableOpacity
@@ -515,11 +430,9 @@ export default function Profile() {
             >
               <Text style={styles.smallBtnText}>Upgrade / Change plan</Text>
             </TouchableOpacity>
-          </View>
+          </ProfileSection>
 
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Setting</Text>
-
+          <ProfileSection title="Setting">
             <TouchableOpacity
               style={styles.settingBtn}
               onPress={handleChangePassword}
@@ -530,7 +443,7 @@ export default function Profile() {
             <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
               <Text style={styles.logoutText}>Logout</Text>
             </TouchableOpacity>
-          </View>
+          </ProfileSection>
 
           <View style={styles.bottomSpacing} />
         </ScrollView>
@@ -538,51 +451,14 @@ export default function Profile() {
         <BottomNavBar />
       </View>
 
-      <Modal
+      <ProfileImagePreviewModal
         visible={imagePreviewVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setImagePreviewVisible(false)}
-      >
-        <View style={styles.imageModalOverlay}>
-          <TouchableOpacity
-            style={styles.imageModalCloseArea}
-            activeOpacity={1}
-            onPress={() => setImagePreviewVisible(false)}
-          />
-
-          <View style={styles.imageModalContent}>
-            {image ? (
-              <Image source={{ uri: image }} style={styles.previewImage} />
-            ) : null}
-
-            <Text style={styles.previewName}>{user.name || "User"}</Text>
-
-            <View style={styles.previewActions}>
-              <TouchableOpacity
-                style={styles.previewButton}
-                onPress={openImagePickerOptions}
-              >
-                <Text style={styles.previewButtonText}>Change Photo</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.previewButton, styles.deletePreviewButton]}
-                onPress={handleDeletePhoto}
-              >
-                <Text style={styles.deletePreviewButtonText}>Delete Photo</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.closePreviewButton}
-                onPress={() => setImagePreviewVisible(false)}
-              >
-                <Text style={styles.closePreviewButtonText}>Close</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+        image={image}
+        name={user.name || "User"}
+        onClose={() => setImagePreviewVisible(false)}
+        onChange={openImagePickerOptions}
+        onDelete={handleDeletePhoto}
+      />
     </View>
   );
 }
@@ -600,7 +476,7 @@ const styles = StyleSheet.create({
 
   scrollContent: {
     paddingHorizontal: 18,
-    paddingTop: 0,
+    paddingTop: 105,
     paddingBottom: 100,
   },
 
@@ -635,228 +511,10 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 
-  profileBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 22,
-    backgroundColor: "#FFFFFF",
-    borderBottomWidth: 1,
-    borderBottomColor: "#E8E0DC",
-    marginTop: 14,
-  },
-
-  avatar: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: "#222",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 18,
-  },
-
-  avatarImg: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    marginRight: 18,
-  },
-
-  avatarText: {
-    color: "#fff",
-    fontSize: 22,
-    fontWeight: "800",
-  },
-
-  profileInfo: {
-    flex: 1,
-  },
-
-  switchText: {
-    fontSize: 14,
-    color: "#777",
-    marginBottom: 20,
-  },
-
-  name: {
-    fontSize: 15,
-    fontWeight: "500",
-    color: "#222",
-    marginBottom: 6,
-  },
-
-  email: {
-    fontSize: 14,
-    color: "#333",
-    marginBottom: 18,
-  },
-
-  editBtn: {
-    width: 130,
-    backgroundColor: "#FFD3C6",
-    paddingVertical: 9,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-
-  editText: {
-    color: "#F47C4C",
-    fontSize: 14,
-    fontWeight: "500",
-  },
-
-  section: {
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 20,
-    paddingVertical: 18,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E8E0DC",
-  },
-
-  sectionTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: "#222",
-    marginBottom: 14,
-  },
-
   sectionText: {
     fontSize: 15,
     color: "#777",
     marginBottom: 12,
-  },
-
-  orderCard: {
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#EFE2DD",
-  },
-
-  orderSummary: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-
-  orderSummaryLeft: {
-    flex: 1,
-    paddingRight: 10,
-  },
-
-  orderSummaryRight: {
-    alignItems: "flex-end",
-    gap: 6,
-  },
-
-  orderNumber: {
-    fontSize: 17,
-    color: "#222",
-    fontWeight: "800",
-    marginBottom: 5,
-  },
-
-  orderDetails: {
-    fontSize: 13,
-    color: "#777",
-  },
-
-  orderStatus: {
-    fontSize: 13,
-    color: "#F47C4C",
-    fontWeight: "800",
-    textTransform: "capitalize",
-  },
-
-  receivedStatusText: {
-    color: "#2F8F46",
-  },
-
-  orderExpandedContent: {
-    marginTop: 12,
-  },
-
-  receivedButton: {
-    alignSelf: "flex-start",
-    backgroundColor: "#F47C4C",
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 10,
-    marginBottom: 8,
-  },
-
-  receivedButtonText: {
-    color: "#FFFFFF",
-    fontSize: 13,
-    fontWeight: "800",
-  },
-
-  receivedBadge: {
-    alignSelf: "flex-start",
-    backgroundColor: "#EEF9F1",
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 10,
-    marginBottom: 8,
-  },
-
-  receivedBadgeText: {
-    color: "#2F8F46",
-    fontSize: 13,
-    fontWeight: "800",
-  },
-
-  orderItemRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 10,
-  },
-
-  orderItemImageBox: {
-    width: 58,
-    height: 50,
-    borderRadius: 8,
-    overflow: "hidden",
-    backgroundColor: "#FFF1ED",
-    position: "relative",
-    marginRight: 12,
-  },
-
-  orderItemImage: {
-    width: "100%",
-    height: "100%",
-  },
-
-  orderItemInfo: {
-    flex: 1,
-  },
-
-  orderItemTitle: {
-    fontSize: 14,
-    color: "#333",
-    fontWeight: "700",
-    marginBottom: 4,
-  },
-
-  orderItemPrice: {
-    fontSize: 13,
-    color: "#777",
-  },
-
-  quantityBadge: {
-    position: "absolute",
-    right: 4,
-    bottom: 4,
-    backgroundColor: "#F47C4C",
-    borderRadius: 8,
-    paddingHorizontal: 5,
-    paddingVertical: 2,
-  },
-
-  quantityText: {
-    color: "#FFFFFF",
-    fontSize: 10,
-    fontWeight: "700",
   },
 
   smallBtn: {
@@ -908,81 +566,5 @@ const styles = StyleSheet.create({
 
   bottomSpacing: {
     height: 70,
-  },
-
-  imageModalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.82)",
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 24,
-  },
-
-  imageModalCloseArea: {
-    ...StyleSheet.absoluteFillObject,
-  },
-
-  imageModalContent: {
-    width: "100%",
-    alignItems: "center",
-  },
-
-  previewImage: {
-    width: 260,
-    height: 260,
-    borderRadius: 130,
-    borderWidth: 4,
-    borderColor: "#FFFFFF",
-    backgroundColor: "#222",
-  },
-
-  previewName: {
-    marginTop: 18,
-    color: "#FFFFFF",
-    fontSize: 22,
-    fontWeight: "800",
-  },
-
-  previewActions: {
-    width: "100%",
-    marginTop: 28,
-  },
-
-  previewButton: {
-    backgroundColor: "#F47C4C",
-    paddingVertical: 13,
-    borderRadius: 16,
-    alignItems: "center",
-    marginBottom: 10,
-  },
-
-  previewButtonText: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "800",
-  },
-
-  deletePreviewButton: {
-    backgroundColor: "#FFFFFF",
-  },
-
-  deletePreviewButtonText: {
-    color: "#D93434",
-    fontSize: 15,
-    fontWeight: "800",
-  },
-
-  closePreviewButton: {
-    paddingVertical: 13,
-    borderRadius: 16,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#FFFFFF",
-  },
-
-  closePreviewButtonText: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "800",
   },
 });

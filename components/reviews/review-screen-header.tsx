@@ -14,9 +14,7 @@ export default function ReviewScreenHeader() {
         onPress={() => router.back()}>
         <Ionicons name="arrow-back" size={22} color="#222222" />
       </TouchableOpacity>
-      <TouchableOpacity accessibilityRole="button" style={styles.iconButton}>
-        <Ionicons name="cart-outline" size={22} color="#FF7A45" />
-      </TouchableOpacity>
+      
     </View>
   );
 }

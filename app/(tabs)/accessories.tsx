@@ -1,6 +1,6 @@
 import { Rancho_400Regular, useFonts } from "@expo-google-fonts/rancho";
 import { useRouter } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -15,13 +15,10 @@ import { auth } from "../../api/firebase";
 import AppBar from "../../components/layout/AppBar";
 import BottomNavBar from "../../components/layout/BottomNavBar";
 import ProductCard from "../../components/ProductCard1w";
+import { useFavorites } from "../../context/FavoritesContext";
+import { useAutoHideAppBar } from "../../hooks/useAutoHideAppBar";
 import { useCart } from "../../hooks/useCart";
 import { useProducts } from "../../hooks/useProducts";
-import {
-  addFavorite,
-  getUserFavorites,
-  removeFavorite,
-} from "../../services/favorites/favorites.service";
 import { notifyCartItemAdded } from "../../services/notifications/notification.service";
 
 const localImages: { [key: string]: any } = {
@@ -36,56 +33,22 @@ const localImages: { [key: string]: any } = {
 export default function Accessories() {
   const router = useRouter();
   const { addToCart } = useCart();
+  const { favoriteIds, toggleFavorite } = useFavorites();
   const [fontsLoaded] = useFonts({ Rancho_400Regular });
-  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
+
+  const { isAppBarVisible, showAppBarWhileScrolling } = useAutoHideAppBar();
 
   const { data: products, isLoading, isError } = useProducts("Accessories");
 
-  useEffect(() => {
-    const loadFavorites = async () => {
-      const userId = auth.currentUser?.uid;
-
-      if (!userId) return;
-
-      try {
-        const ids = await getUserFavorites(userId);
-        setFavoriteIds(ids);
-      } catch (error) {
-        console.log("Error loading favorites:", error);
-      }
-    };
-
-    loadFavorites();
-  }, []);
-
   const handleToggleFavorite = useCallback(
     async (item: any) => {
-      const userId = auth.currentUser?.uid;
-
-      if (!userId) {
-        Alert.alert("Login Required", "Please login to save favorites.");
-        return;
-      }
-
-      const isAlreadyFavorite = favoriteIds.includes(item.id);
-
       try {
-        if (isAlreadyFavorite) {
-          await removeFavorite(userId, item.id);
-
-          setFavoriteIds((prev) =>
-            prev.filter((productId) => productId !== item.id)
-          );
-        } else {
-          await addFavorite(userId, item);
-
-          setFavoriteIds((prev) => [...prev, item.id]);
-        }
+        await toggleFavorite(item);
       } catch (error) {
-        Alert.alert("Error", "Something went wrong. Please try again.");
+        Alert.alert("Login Required", "Please login to save favorites.");
       }
     },
-    [favoriteIds]
+    [toggleFavorite]
   );
 
   const handleAddToCart = useCallback(
@@ -136,13 +99,19 @@ export default function Accessories() {
   }
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={styles.page}>
+      <AppBar isVisible={isAppBarVisible} floating />
+
       <ScrollView
         style={styles.container}
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
+        onScroll={showAppBarWhileScrolling}
+        onScrollBeginDrag={showAppBarWhileScrolling}
+        onScrollEndDrag={showAppBarWhileScrolling}
+        onMomentumScrollEnd={showAppBarWhileScrolling}
+        scrollEventThrottle={16}
       >
-        <AppBar />
-
         <Image
           source={require("../../assets/images/A1/ac.png")}
           style={styles.coverImage}
@@ -174,9 +143,19 @@ export default function Accessories() {
 }
 
 const styles = StyleSheet.create({
+  page: {
+    flex: 1,
+    backgroundColor: "#f5f5f5",
+  },
+
   container: {
     flex: 1,
     backgroundColor: "#f5f5f5",
+  },
+
+  contentContainer: {
+    paddingTop: 105,
+    paddingBottom: 100,
   },
 
   coverImage: {

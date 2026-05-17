@@ -1,4 +1,5 @@
 import { CartProvider } from "@/context/CartContext";
+import { FavoritesProvider } from "@/context/FavoritesContext";
 import { Inter_400Regular } from "@expo-google-fonts/inter";
 import { Itim_400Regular } from "@expo-google-fonts/itim";
 import { Rancho_400Regular } from "@expo-google-fonts/rancho";
@@ -62,20 +63,22 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClientRef.current}>
       <CartProvider>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="entry-gate" />
-          <Stack.Screen name="(tabs)" />
+        <FavoritesProvider>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="entry-gate" />
+            <Stack.Screen name="(tabs)" />
 
-          <Stack.Screen name="login" />
-          <Stack.Screen name="signup" />
-          <Stack.Screen name="discover" />
-          <Stack.Screen name="profile" />
-          <Stack.Screen name="quick-sheet" />
+            <Stack.Screen name="login" />
+            <Stack.Screen name="signup" />
+            <Stack.Screen name="discover" />
+            <Stack.Screen name="profile" />
+            <Stack.Screen name="quick-sheet" />
 
-          <Stack.Screen name="Reviews" />
+            <Stack.Screen name="Reviews" />
 
-          <Stack.Screen name="modal" options={{ presentation: "modal" }} />
-        </Stack>
+            <Stack.Screen name="modal" options={{ presentation: "modal" }} />
+          </Stack>
+        </FavoritesProvider>
       </CartProvider>
     </QueryClientProvider>
   );

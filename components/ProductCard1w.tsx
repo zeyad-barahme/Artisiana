@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import React, { memo } from "react";
+import React from "react";
 import {
   View,
   Text,
@@ -27,7 +27,7 @@ type Props = {
   onPressCard?: () => void;
 };
 
-const ProductCard = memo(function ProductCard({
+export default function ProductCard({
   title,
   price,
   oldPrice,
@@ -47,7 +47,7 @@ const ProductCard = memo(function ProductCard({
     <View style={styles.card}>
       <TouchableOpacity onPress={onPressCard} activeOpacity={0.85}>
         <Image
-          source={typeof image === "string" ? { uri: image } : image}
+          source={image}
           style={styles.image}
           resizeMode="cover"
         />
@@ -108,9 +108,7 @@ const ProductCard = memo(function ProductCard({
       </View>
     </View>
   );
-});
-
-export default ProductCard;
+}
 
 const styles = StyleSheet.create({
   card: {
