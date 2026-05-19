@@ -1,4 +1,9 @@
-import { ActivityIndicator, FlatList, StyleSheet } from "react-native";
+import {
+  ActivityIndicator,
+  FlatList,
+  StyleSheet,
+  TouchableOpacity,
+} from "react-native";
 
 import CategoryCard from "../common/CategoryCard";
 
@@ -13,11 +18,13 @@ type Category = {
 type HomeCategoriesListProps = {
   categories: Category[];
   isLoading: boolean;
+  onSelectCategory?: (category: Category) => void;
 };
 
 export default function HomeCategoriesList({
   categories,
   isLoading,
+  onSelectCategory,
 }: HomeCategoriesListProps) {
   if (isLoading) {
     return (
@@ -30,7 +37,12 @@ export default function HomeCategoriesList({
       data={categories}
       keyExtractor={(item) => item.id}
       renderItem={({ item }) => (
-        <CategoryCard title={item.title} image={item.image} />
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={() => onSelectCategory?.(item)}
+        >
+          <CategoryCard title={item.title} image={item.image} />
+        </TouchableOpacity>
       )}
       horizontal
       showsHorizontalScrollIndicator={false}
