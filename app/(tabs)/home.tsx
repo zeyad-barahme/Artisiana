@@ -1,6 +1,6 @@
 import type { Href } from "expo-router";
 import { router } from "expo-router";
-import { useCallback, useMemo } from "react";
+import { useCallback, useRef, useMemo } from "react";
 import {
   Alert,
   Linking,
@@ -22,6 +22,7 @@ import BottomNavBar from "../../components/layout/BottomNavBar";
 import { useFavorites } from "../../context/FavoritesContext";
 import { useAutoHideAppBar } from "../../hooks/useAutoHideAppBar";
 import { useCart } from "../../hooks/useCart";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   Product,
   useCategories,
@@ -79,6 +80,7 @@ export default function HomeScreen() {
   const { addToCart } = useCart();
   const { favoriteIds, toggleFavorite } = useFavorites();
   const { isAppBarVisible, showAppBarWhileScrolling } = useAutoHideAppBar();
+  const scrollViewRef = useRef<ScrollView>(null);
 
   const {
     data: categories = [],
@@ -166,7 +168,22 @@ export default function HomeScreen() {
       Alert.alert("Error", "Something went wrong while opening the link.");
     }
   }, []);
+  const handleSelectCategory = useCallback(async (category: {
+    id: string;
+    title: string;
+    image: string;
+  }) => {
+    try {
+      await AsyncStorage.setItem(
+        "lastSelectedCategory",
+        JSON.stringify(category)
+      );
 
+      console.log("Saved category:", category.title);
+    } catch (error) {
+      console.log("Error saving selected category:", error);
+    }
+  }, []);
   const handleRetry = useCallback(() => {
     refetchCategories();
     refetchProducts();
@@ -181,6 +198,7 @@ export default function HomeScreen() {
       <AppBar isVisible={isAppBarVisible} floating />
 
       <ScrollView
+        ref={scrollViewRef}
         style={styles.container}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
@@ -199,6 +217,7 @@ export default function HomeScreen() {
         <HomeCategoriesList
           categories={categories}
           isLoading={loadingCategories}
+          onSelectCategory={handleSelectCategory}
         />
 
         <HomeSectionHeader title="Trending Now" />
